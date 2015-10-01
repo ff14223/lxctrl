@@ -35,7 +35,7 @@ int main()
 
         // INIT
         std::string bmaDeviceName = getSettings()->Cfg()->lookup("bma.device");
-        std::string bmaLogFileName = getSettings()->Cfg()->lookup("bma.device");
+        std::string bmaLogFileName = getSettings()->Cfg()->lookup("bma.input-log");
 
         ioimage &io = getIOImage();
         IDigitalSignal *s = io.getSignal("inHausAlarm");
@@ -45,7 +45,7 @@ int main()
         int fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
         if( fdBmaDevice == -1 )
         {
-
+            cout << "WARNING: No BMA Device set." << endl;
         }
 
         if( fdBmaDevice > 0)
