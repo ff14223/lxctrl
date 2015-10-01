@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <fcntl.h>
+#include <signal.h>
+
 using namespace std;
 
 void MakeSysLogEntry(char *Text)
@@ -18,11 +20,21 @@ void MakeSysLogEntry(char *Text)
     closelog();
 }
 
+volatile bool bTerminate=false;
+void sig_handler(int signum)
+{
+    printf("Received signal %d\n", signum);
+    bTerminate = true;
+}
 
 int main()
 {
     cout << "Linux Ctrl" << endl;
     MakeSysLogEntry("Starting lxCtrl...");
+    signal(SIGINT, sig_handler);
+
+    int fdBmaDevice=-1;
+    int fdBmaLogFile=-1;
 
     try
     {
@@ -42,7 +54,7 @@ int main()
 
         vds *vds1 = new vds();
         // open serial device for BMZ Connection
-        int fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
+        fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
         if( fdBmaDevice == -1 )
         {
             cout << "WARNING: No BMA Device set." << endl;
@@ -67,13 +79,13 @@ int main()
 
             tcsetattr(fdBmaDevice, TCSANOW, &options);
         }
-        int fdBmaLogFile = open( bmaLogFileName.c_str() , O_APPEND );
+        fdBmaLogFile = open( bmaLogFileName.c_str() , O_APPEND );
         // other init
 
         unsigned char data[32];
-
+        cout << "Press 'Q' to quit..." << endl;
         // loop
-        while(1)
+        while( bTerminate == false )
         {
             sleep(1);
 
@@ -106,6 +118,12 @@ int main()
         MakeSysLogEntry("Fehler beim starten lxCtrl...");
         MakeSysLogEntry( (char*)e.what() );
     }
+
+    cout << endl << "Closing File Descriptors."  << endl ;
+    if( fdBmaDevice > 0 )
+        close( fdBmaDevice );
+    if( fdBmaLogFile > 0)
+        close( fdBmaLogFile);
 
     return 0;
 }
