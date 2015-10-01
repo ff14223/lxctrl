@@ -7,7 +7,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
-
+#include <termios.h>
+#include <fcntl.h>
 using namespace std;
 
 void MakeSysLogEntry(char *Text)
@@ -47,6 +48,25 @@ int main()
 
         }
 
+        if( fdBmaDevice > 0)
+        {
+            struct termios options;
+
+            tcgetattr(fdBmaDevice, &options);        // get current optionys
+
+            cfsetispeed(&options, B9600);   // SET 9600 BAUD
+            cfsetospeed(&options, B9600);
+
+            options.c_cflag |= (CLOCAL | CREAD);
+            options.c_cflag &= ~PARENB;
+            options.c_cflag &= ~CSTOPB;
+            options.c_cflag &= ~CSIZE;
+            options.c_cflag |= CS8;
+
+            // options.c_cflag &= ~CN_RTSCTS;
+
+            tcsetattr(fdBmaDevice, TCSANOW, &options);
+        }
         int fdBmaLogFile = open( bmaLogFileName.c_str() , O_APPEND );
         // other init
 
@@ -56,12 +76,15 @@ int main()
         while(1)
         {
             sleep(1);
-            cout << "::::" << endl;
+
 
             // get char from serial port
             int nrBytesRead = read( fdBmaDevice, data, sizeof(data));
             if( nrBytesRead > 0)
             {
+
+                cout << ":" << endl;
+
                 // Dmp BMA Data
                 if( fdBmaLogFile  > 0 )
                     write( fdBmaLogFile, data, nrBytesRead );

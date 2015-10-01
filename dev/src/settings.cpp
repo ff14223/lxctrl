@@ -40,7 +40,7 @@ Settings::Settings()
 {
     cfg = new Config();
     if( load("/etc/lxctrl.cfg") == false )
-        if( load("/home/georg/dev/lxctrl/lxctrl.cfg") == false)
+        if( load("/home/georg/dev/lxctrl/dev/lxctrl.cfg") == false)
         {
             SettingNotFound.setReason("Konfigurationsdatei nicht gefunden");
             throw SettingNotFound;
