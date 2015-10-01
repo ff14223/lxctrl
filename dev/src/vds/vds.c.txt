@@ -1,0 +1,251 @@
+#if 0
+#include <global.h>
+#include <vdsframe.h>
+#include <bmausers.h>
+#include "visvar.h"
+
+/*
+  {group:VDS}
+
+  Description: Vds2465 Struktur.
+
+  Remarks: In dieser Struktur werden alle Einstellungen und lokale Daten
+        für eine VDS Verbindung gespeichert.
+*/
+_GLOBAL TVDS2465  Vds2465;
+
+/*
+ {group:VDS}
+
+  Description: Schnittstellenkonfiguration für serielles Interface.
+
+  Remarks: FBase Struktur die eine serielle Schnittstelle beschreibt.
+         Diese Schnittstelle wird nur für die VDS2465 Verbindung verwendet.
+		 Wird im Init-UP beschrieben und geöffnet.
+*/
+_LOCAL XOPENCONFIG xOpenConfig;
+
+/* {group:VDS}
+	
+	Description: Struktur zum lesen von der seriellen Schnittstelle.
+
+	Remarks: Wird von der FBase Library verwendet um Daten von der seriellen
+	      Schnittstelle zu lesen.
+*/
+_LOCAL FRM_rbuf_typ   xRBuf;
+
+
+/*
+** Debug Variablen
+*/
+_GLOBAL unsigned int xRead;
+
+/* {group:VDS}
+
+	Description: Aktuller Zustand der Schrittmachine für Vds.
+
+	Remarks: Enthählt den aktuellen Zustand der Schrittmaschine für den 
+	      Vds-Protokollempfang von der seriellen Schnittstelle. 
+*/
+_GLOBAL unsigned int uiVdsState;
+
+_LOCAL unsigned int uiOldFrameCount;   /* Lokale Variable die die Anzahl der Empfangene Frames 
+                                          im letzten Durchlauf enthält. */
+_LOCAL unsigned int iTime;			   /* Bildung von Zeitverzögerungen in der Vds Frame 
+                                          State Machine */
+
+
+#define BAL_BMA_NEVER_CONNECTED         0x000001
+
+
+#define VDSSTATE_SER_DEVICE_NOT_READY   0x99
+#define VDSSTATE_INIT					0x00
+#define VDSSTATE_STOP					0x1000
+#define BAL_BMA_STOP					0x0100
+
+
+/* {group:VDS}
+
+   Description: Init Funktion des Vds Empfangs Tasks
+
+   Remarks:
+
+*/
+_INIT void InitVds(void)     
+{
+	/*
+	** Start from scratch
+	*/
+	memset( &Vds2465, 0, sizeof( TVDS2465 ) );
+	BmaUsers.iCount = 0;
+
+	xOpenConfig.rx_len = 32;		/* Grösse eines Empfangs Buffers */
+	xOpenConfig.tx_len = 32;		/* Grösse eines Sendebuffers     */
+	xOpenConfig.tx_cnt = 4;			/* Anzahl der Sendebuffer        */
+	xOpenConfig.rx_cnt = 8;			/* Anzahl der Empfangsbuffer     */
+	xOpenConfig.delimc = 0;			/* Frame Ende Kennung            */
+	xOpenConfig.delim[0] = 0x16;	/* */
+	xOpenConfig.delim[1] = 0;		/* */
+	xOpenConfig.idle = 4;           /* Idle Zeit 4 Zeichen 			 */
+
+	Vds2465.SerDevice.device = (int) "IF1";  			
+	Vds2465.SerDevice.mode   = (int) "RS232,N,8,1,9600";
+	
+	Vds2465.SerDevice.config = (int) &xOpenConfig;
+	Vds2465.SerDevice.enable = 1;
+
+	Vds2465.uiRFrameCount = 0;
+	
+	FRM_xopen( &(Vds2465.SerDevice) );
+	
+	if( Vds2465.SerDevice.status == 0 )
+	{
+		Vds2465.xRead.ident = Vds2465.SerDevice.ident;
+		Vds2465.xRead.enable = 1;
+		uiVdsState = VDSSTATE_INIT;
+	}
+	else
+	{
+		uiVdsState = VDSSTATE_SER_DEVICE_NOT_READY;
+		Vds2465.xRead.enable = 0;
+	}
+
+	visModReload = 4321; 
+}
+
+
+/* {group:VDS}
+
+   Description: Zyklischer Task des Vds2465 Protokolls.
+
+   Remarks: Der Task übernimmt das auslesen der Daten von der seriellen Schnittstelle
+       und reicht die Zeichen einzeln zur Empfangs Funktion des Vds Protokolls weiter.
+
+	   Weiters kann über diesen Task das laden der BMZ-Teilnehmer Daten vorgenommen werden.
+*/
+_CYCLIC void VdsTask(void)
+{
+	unsigned char *rBuffer;
+	int i;
+
+	switch( uiVdsState )
+	{
+	case VDSSTATE_SER_DEVICE_NOT_READY:
+		LogWriteString((UDINT)"LOG::104");
+		uiVdsState = VDSSTATE_STOP;
+		break;
+
+	case VDSSTATE_STOP:
+		uiErrInfo[ BMA_ERROR ] |= BAL_BMA_STOP;
+		break;
+		
+	case VDSSTATE_INIT:
+		/*
+		** Es wurde noch kein Frame empfangen 
+		** Errorbit 0 setzten.
+		*/
+		uiErrInfo[ BMA_ERROR ] |= BAL_BMA_INIT;
+
+		if( Vds2465.uiRFrameCount )
+		{
+			iTime = 250;
+			LogWriteString((UDINT)"LOG::105");
+			uiOldFrameCount = Vds2465.uiRFrameCount;
+			uiVdsState = 1;
+		}
+		break;
+	
+
+	case 1:
+		/*
+		** Warten bis n Durchläufe nicht mehr als 2 Frames gekommen sind
+		*/
+		if( iTime == 0 )
+		{
+			if( (Vds2465.uiRFrameCount - uiOldFrameCount) > 2 )
+			{
+				iTime = 250;
+				
+			}
+			else
+			{
+				uiVdsState = 2;
+				uiErrInfo[ BMA_ERROR ] &= ~BAL_BMA_INIT;
+				LogWriteString((UDINT)"LOG::106");
+				iTime = 1000;
+			}
+			uiOldFrameCount = Vds2465.uiRFrameCount;
+		}
+		else
+		{
+			iTime--;
+		}
+		break;
+		
+	case 2:
+		Vds2465.tNoAckSent++;
+		if( Vds2465.tNoAckSent >  1500 )
+		{
+			/*
+			** Set error bit
+			*/
+			LogWriteString((UDINT)"LOG::107");
+			Vds2465.uiRFrameCount = 0;
+			uiVdsState = 0;
+		}
+		break;
+	}
+
+	/*
+	** Load BMA Users
+	*/
+	if( visModReload == 4321 )
+	{
+		if( (LoadBmaUsersFromModule() == FALSE) || (BmaUsers.iCount<1) )
+		{
+			uiErrInfo[ BMA_ERROR ] |= BAL_BMA_ERR_LOAD_BMAUSERS;
+			LogWriteString((UDINT)"LOG::101");
+			visModReload = 1111;
+		}
+		else
+		{
+			uiErrInfo[ BMA_ERROR ] &= ~BAL_BMA_ERR_LOAD_BMAUSERS;
+			LogWriteString((UDINT)"LOG::108");
+			visModReload = 9999; 
+		}
+	}
+
+
+	/*
+	   Von der Schnittstelle lesen.  
+	*/
+	FRM_read( &(Vds2465.xRead) );
+
+	
+	if( Vds2465.xRead.status == 0 )
+	{
+		/*
+			Die Zeichen einzeln
+		*/
+		rBuffer = (unsigned char*) Vds2465.xRead.buffer;
+		for(i=0; i<Vds2465.xRead.buflng; i++)
+		{
+			xRead++;
+			/*
+				An Vds State Machine übergeben
+			*/
+			VdsStateMachine( &Vds2465, rBuffer[i] );
+		}
+	
+		/*
+			Empfangsbuffer wieder freigeben
+		*/
+		xRBuf.ident = Vds2465.SerDevice.ident;
+    	xRBuf.buffer = Vds2465.xRead.buffer;
+   		xRBuf.buflng = Vds2465.xRead.buflng;
+    	xRBuf.enable = 1;
+				   
+		FRM_rbuf(&xRBuf);
+	}
+}
+#endif

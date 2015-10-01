@@ -5,6 +5,8 @@
 #include <src/test.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
 
 using namespace std;
 
@@ -39,13 +41,13 @@ int main()
 
         vds *vds1 = new vds();
         // open serial device for BMZ Connection
-        int fdBmaDevice = open( bmaDeviceName, O_RDWR | O_NOCTTY | O_NDELAY );
-        if( fd == -1 )
+        int fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
+        if( fdBmaDevice == -1 )
         {
 
         }
 
-        int fdBmaLogFile = open( bmaLogFileName , O_WR );
+        int fdBmaLogFile = open( bmaLogFileName.c_str() , O_APPEND );
         // other init
 
         unsigned char data[32];
