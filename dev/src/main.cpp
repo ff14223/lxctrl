@@ -79,10 +79,18 @@ int main()
 
             tcsetattr(fdBmaDevice, TCSANOW, &options);
         }
-        fdBmaLogFile = open( bmaLogFileName.c_str() , O_APPEND );
-        // other init
-
+        fdBmaLogFile = open( bmaLogFileName.c_str() ,  O_RDWR | O_CREAT);
+        if( fdBmaLogFile  < 0 )
+            cout << "Could not open log..." << endl;
         unsigned char data[32];
+        // other init
+        data[0] = 'T';
+
+        // Dmp BMA Data
+        if( fdBmaLogFile  > 0 )
+            write( fdBmaLogFile, data, 1 );
+
+
         cout << "Press 'Q' to quit..." << endl;
         // loop
         while( bTerminate == false )
