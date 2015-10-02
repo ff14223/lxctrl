@@ -24,6 +24,7 @@ public:
     unsigned char getC(){ return m_Data[OFFSET_STEUER]; }
     unsigned char getA(){ return m_Data[OFFSET_ADDR];}
     void ForEachUserFrame( cbUserFrame cb, unsigned int cbCooky );
+    int GetNDatFrame(int *pOffset, unsigned char *pData);
 };
 
 #endif // VDSFRAME_H

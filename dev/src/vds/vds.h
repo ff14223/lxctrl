@@ -35,16 +35,41 @@ typedef struct
     unsigned char Data[255]   __attribute__((packed));
 }TVDSUserFrame;
 
+typedef struct
+{
+    unsigned short usKanal;		/* Kanal der Einsteckkarte   				*/
+    unsigned short usAddresse;	/* Addresse der Einsteckkart 				*/
+    unsigned int uiNumber;		/* Laufende Nummer der Meldung bei �Z 		*/
+    unsigned short usReg;		/* wodurch wurde diese Meldung registriert 	*/
+    unsigned int Art;			/*  */
+    unsigned short usTransport; /* Transportdienst 							*/
+    unsigned int uiID;			/*  */
+}TVDSUserData;
+
+#include "inc/interfaces.h"
+#include "inc/ISystemData.h"
 class vds
 {
     enumFrameReceiveState enFrameReceiveState;
     unsigned int uiFramesReceived;
     VdsFrame* pFrameReceive;
+    IDatabase *pIDb;
+    ISystemSignals *pSignals;
+    int cbFrame(int Len, unsigned char *pData, unsigned int cooky);
+    void VdsParse_NDAT_INTERN(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
+    void VdsParse_NDAT_SLOTINFORMTION(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
+    void VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
+    void VdsParse_NDAT_0x56(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
+
 public:
-    vds();
+    vds(IDatabase*pIDb, ISystemSignals *pSignals);
     void ReceiveFrameStateMachine(unsigned char Data);
     void SendAck();
+
     int ParseUserFrame(unsigned char *pFrameStart);
 };
+
+
+unsigned int GetBcdValue( unsigned char bcd );
 
 #endif // VDS_H

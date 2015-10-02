@@ -10,10 +10,20 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <src/mysqladapter.h>
 
+
+#include <time.h>
+
+#include <inc/ISystemData.h>
+ISystemData systemData={0};             // global data storage
+ISystemSignals systemSignals={0};
+
+void init(ISystemData *pSystemData);
+void init_signals(ISystemData *pSystemData, ISystemSignals *pSignals);
 using namespace std;
 
-void MakeSysLogEntry(char *Text)
+void MakeSysLogEntry(const char *Text)
 {
     openlog("lxctrl", LOG_PID|LOG_CONS, LOG_USER);
     syslog(LOG_INFO, Text);
@@ -29,8 +39,9 @@ void sig_handler(int signum)
 
 int main()
 {
+
     cout << "Linux Ctrl" << endl;
-    MakeSysLogEntry("Starting lxCtrl...");
+
     signal(SIGINT, sig_handler);
 
     int fdBmaDevice=-1;
@@ -38,27 +49,24 @@ int main()
 
     try
     {
-        /*
-         * TESTING
-        */
-        Test *baseTest = new Test();
-        baseTest->testVdsFrame();
-
-
         // INIT
+        init( &systemData );
+        init_signals(&systemData, &systemSignals);
+        // Database
+        /*std::string dbUser = getSettings()->Cfg()->lookup("db.user");
+        std::string dbPwd = getSettings()->Cfg()->lookup("db.pwd");
+        IDatabase *db = new MySqlAdapter( dbUser.c_str(), dbPwd.c_str() ); */
+
+
         std::string bmaDeviceName = getSettings()->Cfg()->lookup("bma.device");
         std::string bmaLogFileName = getSettings()->Cfg()->lookup("bma.input-log");
 
-        ioimage &io = getIOImage();
-        IDigitalSignal *s = io.getSignal("inHausAlarm");
+    vds *vds1 = new vds( systemData.pIDb, &systemSignals );
 
-        vds *vds1 = new vds();
         // open serial device for BMZ Connection
         fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
         if( fdBmaDevice == -1 )
-        {
             cout << "WARNING: No BMA Device set." << endl;
-        }
 
         if( fdBmaDevice > 0)
         {
@@ -81,29 +89,42 @@ int main()
         }
         fdBmaLogFile = open( bmaLogFileName.c_str() ,  O_RDWR | O_CREAT);
         if( fdBmaLogFile  < 0 )
-            cout << "Could not open log..." << endl;
+            cout << "WARNING: Could not open log..." << endl;
+
         unsigned char data[32];
-        // other init
-        data[0] = 'T';
 
-        // Dmp BMA Data
-        if( fdBmaLogFile  > 0 )
-            write( fdBmaLogFile, data, 1 );
+        /*
+         * TESTING
+        */
+        std::string runTest = getSettings()->Cfg()->lookup("lxctrl.runtest");
+        if(  runTest.compare( "true" ) == 0 )
+        {
+            Test *baseTest = new Test();
+            baseTest->testVdsFrame( vds1 );
+            return(1);
+        }
 
+        // enter production loop
+        cout << "Press CTRL-C to quit..." << endl;
+        systemData.pIDb->LogEntry( 1000, "lxctrl is up and running" );
+        MakeSysLogEntry("lxctrl is up and runnuing");
 
-        cout << "Press 'Q' to quit..." << endl;
         // loop
+        int milliseconds = 250;
+        struct timespec ts;
+        ts.tv_sec = milliseconds / 1000;
+        ts.tv_nsec = (milliseconds % 1000) * 1000000;
+
         while( bTerminate == false )
         {
-            sleep(1);
-
+            nanosleep(&ts, NULL);
 
             // get char from serial port
             int nrBytesRead = read( fdBmaDevice, data, sizeof(data));
             if( nrBytesRead > 0)
             {
 
-                cout << ":" << endl;
+                cout << ":" ;
 
                 // Dmp BMA Data
                 if( fdBmaLogFile  > 0 )

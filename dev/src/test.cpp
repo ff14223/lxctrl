@@ -54,10 +54,8 @@ void Test::SimpleFrame()
 }
 
 
-void Test::TestFrame()
+void Test::TestFrame(vds *pVds)
 {
-    vds * vdsStatemachine = new vds();
-
     unsigned char Data[] ={ 0x68, 73, 73, 0x68, 0x73,0x03,
                             0x15,0x00,0x12,0x08,0x01,0xE4,0xC9,0x15,0x20,0x07,0x15,0x13,0x56,0x00,0x01,0xFF,0x06,0x66,0x46,0x01,0x65,0x35,0x69,0x06,0x52,0x66,0x46,0x01,0x65,0x35,0x69,
                             0x02,0xBB,0x20,0x12,
@@ -73,15 +71,15 @@ void Test::TestFrame()
     cout << "Size of Frame:" << sizeof(Data) << endl;
 
     for(int i=0; i<sizeof(Data);i++)
-        vdsStatemachine->ReceiveFrameStateMachine(Data[i]);
+        pVds->ReceiveFrameStateMachine(Data[i]);
 
 
 }
 
-void Test::testVdsFrame()
+void Test::testVdsFrame(vds *pVds)
 {
     SimpleFrame();
-    TestFrame();
+    TestFrame(pVds);
 }
 
 

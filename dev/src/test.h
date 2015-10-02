@@ -1,14 +1,16 @@
 #ifndef TEST_H
 #define TEST_H
 
+#include <src/vds/vds.h>
+
 class Test
 {
 public:
     Test();
-    void testVdsFrame();
+    void testVdsFrame(vds *pVds);
     void AssertEqual(int a, int b, char *what);
     void SimpleFrame();
-    void TestFrame();
+    void TestFrame(vds *pVds);
 };
 
 #endif // TEST_H

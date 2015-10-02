@@ -2,6 +2,8 @@
 #define IOIMAGE_H
 
 #include <inc/IDigitalSignal.h>
+#include <inc/IIoImage.h>
+
 #include <map>
 #include <string>
 
@@ -10,7 +12,7 @@ typedef enum
     NF_IN=0,
 }enDigitalIO;
 
-class ioimage
+class ioimage : public IIoImage
 {
     bool * m_DigitalSignal;     // Signals that get connected internal
 

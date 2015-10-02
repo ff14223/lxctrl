@@ -3,6 +3,7 @@
 
 class IDigitalSignal
 {
+public:
     virtual bool get()=0;
     virtual void set(bool value)=0;
 };

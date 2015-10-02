@@ -41,6 +41,31 @@ int VdsFrame::Length(){return (int) m_Data[OFFSET_LENGTH];}
 #define FCMD_SEND_NORM			0
 #define FCMD_SEND_NDAT			3
 
+#include <memory.h>
+
+int VdsFrame::GetNDatFrame(int *pOffset, unsigned char *pData)
+{
+    unsigned int offset = *pOffset;
+    unsigned char bFCode = getC() & 0x0F;
+
+    unsigned char *p = (unsigned char*)&(m_Data[OFFSET_DATA]);
+
+    if( bFCode != FCMD_SEND_NDAT)
+        return -1;
+
+
+    if( offset <= (Length()) )
+    {
+        //cout << "Offset:" << offset<< endl;
+        int count = p[offset];
+        memcpy( pData, &p[offset+1], p[offset]); // copy to data
+        *pOffset += p[offset] + 2;
+        return count;
+    }
+
+    return -1;
+}
+
 void VdsFrame::ForEachUserFrame( cbUserFrame cb, unsigned int cbCooky )
 {
     unsigned int offset = 0;
