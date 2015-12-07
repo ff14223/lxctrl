@@ -2,10 +2,23 @@
 #include "my_global.h"
 #include <mysql.h>
 #include <stdio.h>
-using namespace std;
-
+#include "src/bmzuser.h"
 
 #define CON ((MYSQL*)dbConn)
+
+using namespace std;
+
+IBmzUser* MySqlAdapter::getBmzUser(long id)
+{
+    char statement[255];
+    sprintf(statement, "select * from bmauser where ID='%s'", id);
+    if (mysql_query(CON, statement))
+          return NULL;
+
+    BmzUser user = new BmzUser();
+
+
+}
 
 void finish_with_error(MYSQL *con)
 {
@@ -47,12 +60,28 @@ void MySqlAdapter::LogEntry(int Type, const char *Text)
 
 void MySqlAdapter::CreateTables()
 {
-    /*
-    CREATE TABLE `lxctrl`.`log` (
-      `idlog` INT NOT NULL,
-      `Erstellt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-      `Nr` INT NULL,
-      `Text` VARCHAR(160) NULL,
-      PRIMARY KEY (`idlog`)) */
+    if( mysql_query(CON, "SELECT 1 FROM lxctrl LIMIT 1;") )
+    {
+        mysql_query(CON, "CREATE TABLE `lxctrl`.`log` ( "
+                    "`idlog` INT NOT NULL,"
+                    "`Erstellt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,"
+                    "`Nr` INT NULL,"
+                    "`Text` VARCHAR(160) NULL,"
+                    "PRIMARY KEY (`idlog`))");
+    }
+
+    if( mysql_query(CON, "SELECT 1 FROM bmauser LIMIT 1;") )
+    {
+        if( mysql_query(CON, "CREATE TABLE `lxctrl`.`bmauser` ( "
+                    "`idbmauser` INT NOT NULL,"
+                    "`Erstellt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,"
+                    "ID INT NULL,"
+                    "`Name` VARCHAR(160) NULL,"
+                    "PRIMARY KEY (`idbmauser`))") )
+        {
+            printf("Tabelle 'bmauser' konnte nicht erzeugt werden.\n");
+            finish_with_error(CON);
+        }
+    }
 }
 

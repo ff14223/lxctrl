@@ -60,7 +60,7 @@ class vds
     void VdsParse_NDAT_SLOTINFORMTION(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
     void VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
     void VdsParse_NDAT_0x56(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
-
+    void VdsParse_NDAT_0x52(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
 public:
     vds(IDatabase*pIDb, ISystemSignals *pSignals);
     void ReceiveFrameStateMachine(unsigned char Data);

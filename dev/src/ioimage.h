@@ -18,14 +18,18 @@ class ioimage : public IIoImage
 
     std::map<std::string, IDigitalSignal*> m_mapSignal;
     std::map<std::string, IDigitalSignal*> m_mapInternSignal;       // interne Signale (cfg intern )
+    std::map<std::string, IDigitalSignal*> m_mapCanSignal;          // interne Signale (cfg intern )
+    std::map<std::string, IDigitalSignal*> m_mapLokalSignal;       // interne Signale (cfg intern )
     void MakeSignal(std::string SignalName, std::string SignalMap);
     void GenerateInternalSignals();
 public:
     ioimage();
     IDigitalSignal* getSignal(const std::string SignalName);
+    void UpdateInputs();
+    void UpdateOutputs();
 };
 
 
-ioimage& getIOImage() ;
+IIoImage* getIOImage() ;
 
 #endif // IOIMAGE_H

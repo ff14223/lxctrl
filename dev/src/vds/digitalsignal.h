@@ -5,11 +5,16 @@
 
 class DigitalSignal : public IDigitalSignal
 {
-    bool* m_value;
+    bool* m_IoValue;
+    bool  m_CurrentValue;
+    bool  m_Raised;
 public:
     DigitalSignal(bool *value);
     virtual bool get();
     virtual void set(bool value);
+    virtual void updateInput();
+    virtual void updateOutput();
+    virtual bool raised();
 };
 
 #endif // DIGITALSIGNAL_H

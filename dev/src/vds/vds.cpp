@@ -61,23 +61,6 @@ void vds::VdsParse_NDAT_SLOTINFORMTION(unsigned char bLen, unsigned char*Data, T
 
 void vds::VdsParse_NDAT_INTERN(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData)
 {
-#if 0
-    char LogText[200];
-    int i;
-
-    LogText[0] = 'd';
-    LogText[1] = 'x';
-    LogText[2] = '0';
-    LogText[3] = '0';
-    LogText[4] = ':';
-
-    for(i=0;i<bLen;i++)
-    {
-         HexValue( Data[i], &(LogText[i*2+5]) );
-    }
-    LogText[i*2+5] = 0;
-    LogWriteString( (UDINT) LogText );
-#endif
     cout << "VdsParse_NDAT_INTERN" << endl;
     pUserData->uiNumber = 0;/* GetBcdValue( Data[2] )*10000 + GetBcdValue( Data[3] )*100 + GetBcdValue( Data[4] );*/
     pUserData->usKanal     =  Data[12] >> 4;
@@ -85,28 +68,13 @@ void vds::VdsParse_NDAT_INTERN(unsigned char bLen, unsigned char*Data, TVDSUserD
     pUserData->usTransport =  Data[13];
 }
 
+void vds::VdsParse_NDAT_0x52(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData)
+{
+    // TelefonNr
+}
+
 void vds::VdsParse_NDAT_0x56(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData)
 {
-    #if 0
-    char LogText[200];
-    int i;
-
-    /*
-       Eintrag ins Logbuch.
-    */
-    LogText[0] = 'd';
-    LogText[1] = 'x';
-    LogText[2] = '5';
-    LogText[3] = '6';
-    LogText[4] = ':';
-
-    for(i=0;i<bLen;i++)
-    {
-         HexValue( Data[i], &(LogText[i*2+5]) );
-    }
-    LogText[i*2+5] = 0;
-    LogWriteString( (UDINT) LogText );
-    #endif
     /*
        Die nibbles sind geswapt. F�r ID:13 wird 31 in Data[2]
        gesendet.
@@ -130,28 +98,6 @@ void vds::VdsParse_NDAT_0x56(unsigned char bLen, unsigned char*Data, TVDSUserDat
 
 void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData)
 {
-#if 0
-    TBmaUser *pUser;
-
-
-    char txtRoutineFehlt[] = {"ARoutine fehlt von Teilnehmer:                                         "};
-    int j,i;
-    char LogText[200];
-    int i;
-    LogText[0] = 'd';
-    LogText[1] = 'Y';
-    LogText[2] = 'S';
-    LogText[3] = 'I';
-    LogText[4] = ':';
-
-    for(i=0;i<bLen;i++)
-    {
-         HexValue( Data[i], &(LogText[i*2+5]) );
-    }
-    LogText[i*2+5] = 0;
-    LogWriteString( (UDINT) LogText );
-#endif
-
     switch( Data[1] )
     {
         case 0x00:
@@ -227,18 +173,6 @@ int vds::cbFrame(int Len, unsigned char *pData, unsigned int cooky)
     unsigned char nType = pData[0];
     TVDSUserData data;
 
-    /* TODO Move to vdsframe
-     * cout << "Frame Dump " << endl;
-    for(int i= 0; i < Len ; i++ )
-    {
-        cout << std::hex << (int)pData[i] << " ";
-        if( i > 0 && (i%16)==0)
-            cout << endl;
-    }
-    cout << endl; */
-
-
-
     switch( nType )
     {
         case NDAT_INTERN:
@@ -261,13 +195,19 @@ int vds::cbFrame(int Len, unsigned char *pData, unsigned int cooky)
             VdsParse_NDAT_SYSTEMINTERNAL( Len, &pData[1], &data);
             break;
 
+        case 0x52:
+            // wenn auch ein Frame mit 0xBB enthaltenist, so ist die Tel.Nr codiert
+            break;
+
         case 0x56:
             VdsParse_NDAT_0x56( Len, &pData[1], &data);
             break;
 
         default:
-            cout << "Parsing UserFrame Type: " <<  std::hex << " " << (int)nType << "  Len:" << Len << endl;
-            pIDb->LogEntry( 10100, "unhandelt Frame ");
+            cout << "?: " <<  std::hex << " " << (int)nType << "  Len:" << Len << endl;
+            char Text[200];
+            sprintf(Text,"unbehandelter Frame Type:0x%02x Länge:%d", nType, Len);
+            pIDb->LogEntry( 10100, Text );
         break;
     }
 

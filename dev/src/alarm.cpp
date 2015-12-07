@@ -3,3 +3,8 @@
 Alarm::Alarm()
 {
 }
+
+void Alarm::raise()
+{
+
+}

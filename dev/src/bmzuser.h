@@ -1,10 +1,18 @@
 #ifndef BMZUSER_H
 #define BMZUSER_H
 
-class bmzuser
+#include <iostream>
+#include "inc/IBmzUser.h"
+
+using namespace std;
+
+class BmzUser : public IBmzUser
 {
+    string Name;
+    long m_bmaid;
 public:
-    bmzuser();
+    BmzUser(string name, long id);
+    long getBmaId();
 };
 
 #endif // BMZUSER_H

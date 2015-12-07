@@ -19,7 +19,11 @@ SOURCES += src/settings.cpp \
     src/test.cpp \
     src/main.cpp \
     src/mysqladapter.cpp \
-    src/systeminit.cpp
+    src/systeminit.cpp \
+    src/controler.cpp \
+    ../backup/pgm/FFCtrl/CPU/alarmtask.c \
+    src/alarm.cpp \
+    src/bmzuser.cpp
 
 HEADERS += \
     src/settings.h \
@@ -39,7 +43,12 @@ HEADERS += \
     inc/IDatabase.h \
     inc/interfaces.h \
     inc/ISystemData.h \
-    inc/IIoImage.h
+    inc/IIoImage.h \
+    src/alarm.h \
+    inc/IAlarm.h \
+    inc/IBmzUser.h \
+    src/bmzuser.h \
+    inc/ILogger.h
 
 OTHER_FILES += \
     src/vds/vdsframe.wth \

@@ -24,12 +24,21 @@ public:
 } SignalNotFound;
 
 
-ioimage& getIOImage()
+void ioimage::UpdateInputs()
+{
+}
+
+void ioimage::UpdateOutputs()
+{
+    
+}
+
+IIoImage* getIOImage()
 {
     static ioimage* image=0;
     if( image == 0 )
         image = new ioimage();
-    return *image;
+    return image;
 }
 
 ioimage::ioimage()
@@ -74,6 +83,7 @@ void ioimage::MakeSignal(std::string SignalName, std::string SignalMap)
     IDigitalSignal *d = 0;
     if( SignalMap.find_first_of("intern.") == 0 )
         d = m_mapInternSignal[SignalMap];
+
 
     if( d == 0 )
     {

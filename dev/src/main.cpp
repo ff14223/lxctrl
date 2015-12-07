@@ -37,6 +37,9 @@ void sig_handler(int signum)
     bTerminate = true;
 }
 
+void ctrl_general(ISystemData *pSystemData, ISystemSignals *pSignals);
+void ctrl_alarm(ISystemData *pSystemData, ISystemSignals *pSignals);
+
 int main()
 {
 
@@ -61,15 +64,16 @@ int main()
         std::string bmaDeviceName = getSettings()->Cfg()->lookup("bma.device");
         std::string bmaLogFileName = getSettings()->Cfg()->lookup("bma.input-log");
 
-    vds *vds1 = new vds( systemData.pIDb, &systemSignals );
+        vds *vds1 = new vds( systemData.pIDb, &systemSignals );
 
         // open serial device for BMZ Connection
         fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
         if( fdBmaDevice == -1 )
-            cout << "WARNING: No BMA Device set." << endl;
+            cout << "WARNING: No BMA Device set. (" << bmaDeviceName << ")"<< endl;
 
         if( fdBmaDevice > 0)
         {
+            cout << "Configuring serial device for 8N1 9600" << endl;
             struct termios options;
 
             tcgetattr(fdBmaDevice, &options);        // get current optionys
@@ -119,6 +123,8 @@ int main()
         {
             nanosleep(&ts, NULL);
 
+            systemData.pIo->UpdateInputs();
+            
             // get char from serial port
             int nrBytesRead = read( fdBmaDevice, data, sizeof(data));
             if( nrBytesRead > 0)
@@ -134,11 +140,14 @@ int main()
                     vds1->ReceiveFrameStateMachine( data[i] );
             }
 
-            // get inputs
+            // allgemeine Dinge
+            ctrl_general(&systemData, &systemSignals);
 
             // check for alarm
+            ctrl_alarm(&systemData, &systemSignals);
 
             // handle state machines
+            systemData.pIo->UpdateOutputs();
         }
     }
     catch( exception& e)
