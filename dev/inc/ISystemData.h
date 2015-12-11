@@ -10,6 +10,8 @@
 typedef struct
 {
     IAlarm *pHausalarm;
+    IAlarm *pRoutineMissing;
+    IAlarm *pStoerung;
 }sAlarms;
 
 typedef struct

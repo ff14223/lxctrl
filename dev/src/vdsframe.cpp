@@ -4,11 +4,21 @@
 
 using namespace std;
 
+#define OFFSET_LENGTH   1
+#define OFFSET_STEUER   3
+#define OFFSET_ADDR     4
+#define OFFSET_DATA     5
+#define OFFSET_CHECKSUM 6
+
+unsigned char VdsFrame::getC(){ return m_Data[OFFSET_STEUER]; }
+unsigned char VdsFrame::getA(){ return m_Data[OFFSET_ADDR];}
+
 void VdsFrame::AddData(unsigned char data)
 {
     m_Data[OFFSET_LENGTH]++;
     *pData = data;                  // neue daten
     pData++;                        // nächste position
+    uiCheckSum += data;
 }
 
 VdsFrame::VdsFrame()
@@ -18,7 +28,8 @@ VdsFrame::VdsFrame()
 
 void VdsFrame::Reset()
 {
-    m_Data[1] = m_Data[0] = 0x68;
+    uiCheckSum = 0;
+    m_Data[2] = m_Data[0] = 0x68;
     m_Data[OFFSET_LENGTH] = 2;
     m_Data[OFFSET_ADDR] = 1;
     m_Data[OFFSET_STEUER] =0;
@@ -29,11 +40,13 @@ void VdsFrame::Reset()
 void VdsFrame::SetC(unsigned char c)
 {
     m_Data[OFFSET_STEUER] = c;
+    uiCheckSum += c;
 }
 
 void VdsFrame::SetA(unsigned char a)
 {
     m_Data[OFFSET_ADDR] = a;
+    uiCheckSum += a;
 }
 
 int VdsFrame::Length(){return (int) m_Data[OFFSET_LENGTH];}
@@ -42,6 +55,17 @@ int VdsFrame::Length(){return (int) m_Data[OFFSET_LENGTH];}
 #define FCMD_SEND_NDAT			3
 
 #include <memory.h>
+
+
+void VdsFrame::Dump()
+{
+    int iSize =  m_Data[OFFSET_LENGTH];
+    unsigned char *p = (unsigned char*)&(m_Data[OFFSET_DATA]);
+    for(int i=0;i<iSize;i++)
+    {
+        cout << std::hex << (int)m_Data[i + OFFSET_DATA] << " ";
+    }
+}
 
 int VdsFrame::GetNDatFrame(int *pOffset, unsigned char *pData)
 {
@@ -54,12 +78,12 @@ int VdsFrame::GetNDatFrame(int *pOffset, unsigned char *pData)
         return -1;
 
 
-    if( offset <= (Length()) )
+    if( offset < (Length()-2) )
     {
-        //cout << "Offset:" << offset<< endl;
-        int count = p[offset];
-        memcpy( pData, &p[offset+1], p[offset]); // copy to data
-        *pOffset += p[offset] + 2;
+        int count = p[offset]+1;
+        memcpy( pData, &p[offset+1], count ); // copy to data +1 weil art nicht in size
+        //cout << "    Offset:" << offset<< " Count:" << count << " Type:" <<  (int)(pData[0]) << endl;
+        *pOffset += count+1;
         return count;
     }
 
@@ -91,22 +115,15 @@ void VdsFrame::ForEachUserFrame( cbUserFrame cb, unsigned int cbCooky )
         */
         while( offset <= (Length()) )
         {
-            cout << "Offset:" << offset;
+            //cout << "Offset:" << offset;
             cb( p[offset], &p[offset+1], 0);
             offset += p[offset] + 2;
         }
         break;
     }
-
 }
 
 unsigned char VdsFrame::Checksumm()
 {
-    unsigned char ucSum=0;
-    int l = m_Data[OFFSET_LENGTH];
-    for(int i=0;i<l;i++)
-    {
-        ucSum += m_Data[OFFSET_STEUER+i];
-    }
-    return ucSum;
+    return (unsigned char) (uiCheckSum & 0xFF);
 }

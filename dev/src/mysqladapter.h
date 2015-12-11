@@ -12,7 +12,8 @@ public:
      ~MySqlAdapter();
     MySqlAdapter(const char *, const char* );
     void  LogEntry(int,const char *);
-    virtual IBmzUser* getBmzUser(long id);
+    IBmzUser* getBmzUser(long id);
+    void saveBmzUser(IBmzUser *pIUser);
 };
 
 #endif // MYSQLADAPTER_H

@@ -98,6 +98,9 @@ void vds::VdsParse_NDAT_0x56(unsigned char bLen, unsigned char*Data, TVDSUserDat
 
 void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData)
 {
+    IBmzUser *pUser;
+    char Text[255];
+
     switch( Data[1] )
     {
         case 0x00:
@@ -108,36 +111,29 @@ void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, T
             /*
             ** Auf alle F�lle merken
             */
-            pIDb->LogEntry( 203, "Routine von Teilnehmer fehlt.");
-#if 0
-            /*
-            ** Mit allen Usern vergleichen
-            */
-            for(i = 0; i< BmaUsers.iCount; i++)
+
+            pUser = pIDb->getBmzUser( pUserData->uiID );
+            if( pUser == 0)
+                pUser = pIDb->getBmzUser( 0 );
+
+            if( pUser )
             {
-                pUser = &(BmaUsers.BmaUser[i]);
-
-                /*
-                ** User ist disabled
-                */
-                if( pUser->Disabled )
-                    continue;
-
-                /*
-                ** Check ID
-                */
-                if( pUser->id == pUserData->uiID)
+                int count = pUser->getRoutineMissingCount();
+                if( count<= 0 )
                 {
-                    j=0;
-                    for(j=0;pUser->Name[j];j++)
-                    {
-                        txtRoutineFehlt[30+j] = pUser->Name[j];
-                    }
-                    LogWriteString((UDINT)txtRoutineFehlt);
-                    return;
+                    // erstes Auftreten
+                    snprintf(Text, 255, "Routine von Teilnehmer \"%s\" fehlt", pUser->getName().c_str() );
+                    pIDb->LogEntry( 203, Text);
+
                 }
+                pUser->setRoutineMissingCount(++count);
+                pIDb->saveBmzUser( pUser );
             }
-#endif
+            else
+            {
+                pIDb->LogEntry( 203, "Routine von Teilnehmer fehlt.");
+                pIDb->LogEntry( 203, "Unbekannte ID.");
+            }
             break;
 
         case 0x01:
@@ -171,12 +167,12 @@ int vds::cbFrame(int Len, unsigned char *pData, unsigned int cooky)
 {
 
     unsigned char nType = pData[0];
-    TVDSUserData data;
+
 
     switch( nType )
     {
         case NDAT_INTERN:
-            VdsParse_NDAT_INTERN( Len, &pData[1], &data);
+            VdsParse_NDAT_INTERN( Len, &pData[1], &m_data);
             break;
 
         /*case NDAT_STATUS:
@@ -184,7 +180,7 @@ int vds::cbFrame(int Len, unsigned char *pData, unsigned int cooky)
             break;*/
 
         case NDAT_SLOTINFORMTION:
-            VdsParse_NDAT_SLOTINFORMTION( Len, &pData[1], &data);
+            VdsParse_NDAT_SLOTINFORMTION( Len, &pData[1], &m_data);
             break;
 
         /*case NDAT_UEGMSG:
@@ -192,7 +188,7 @@ int vds::cbFrame(int Len, unsigned char *pData, unsigned int cooky)
             break;
 */
         case NDAT_SYSTEMINTERNAL:
-            VdsParse_NDAT_SYSTEMINTERNAL( Len, &pData[1], &data);
+            VdsParse_NDAT_SYSTEMINTERNAL( Len, &pData[1], &m_data);
             break;
 
         case 0x52:
@@ -200,7 +196,7 @@ int vds::cbFrame(int Len, unsigned char *pData, unsigned int cooky)
             break;
 
         case 0x56:
-            VdsParse_NDAT_0x56( Len, &pData[1], &data);
+            VdsParse_NDAT_0x56( Len, &pData[1], &m_data);
             break;
 
         default:
@@ -226,15 +222,20 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
 {
     static unsigned char ucExpectedFrameLength;
     int Redo = 1;
+    static unsigned int uiCheckSum;
 
     while( Redo == 1 )
     {
         Redo = 0;
+
         switch( enFrameReceiveState )
         {
         case VDS_FRAME_WAIT_FOR_START:				/* Warten auf Start (0x68)    */
             if( Data == 0x68  )
+            {
                 enFrameReceiveState = VDS_FRAME_GET_LEN;
+                pFrameReceive->Reset();
+            }
             break;
 
         case VDS_FRAME_GET_LEN:
@@ -270,12 +271,14 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
 
 
         case VDS_FRAME_GET_CFIELD:
+            uiCheckSum = Data;
             pFrameReceive->SetC( Data );
             enFrameReceiveState  = VDS_FRAME_GET_AFIELD;
             break;
 
 
         case VDS_FRAME_GET_AFIELD:
+            uiCheckSum += Data;
             pFrameReceive->SetA( Data );
             if( ucExpectedFrameLength > 2 )
             {
@@ -291,7 +294,12 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
 
         case VDS_FRAME_GET_DATA:		/* Get Data */
             pFrameReceive->AddData(Data);
-
+            uiCheckSum += Data;
+            /*cout << " Offset:" << pFrameReceive->Length()
+                 << " uiCheckSum:" << uiCheckSum
+                 << " pFrameReceive->Checksumm()" << (int)pFrameReceive->Checksumm() << endl;*/
+            /* if( Data == uiCheckSum )
+                cout << "Date == Checksum "; */
 
             if( pFrameReceive->Length() >= (int)(ucExpectedFrameLength) )
             {
@@ -301,13 +309,15 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
 
 
         case VDS_FRAME_GET_CHECKSUM:		/* Get Checksum */
-            if( Data != pFrameReceive->Checksumm() )
+            if( Data == pFrameReceive->Checksumm() )
             {
                 enFrameReceiveState = VDS_FRAME_GET_FRAME_END;
             }
             else
             {
+                cout << "Invalid Checksum  Data was:0x" << std::hex << (int) Data << "CSum:" << (int) pFrameReceive->Checksumm()  << endl;
                 enFrameReceiveState = VDS_FRAME_WAIT_FOR_START;
+                enFrameReceiveState = VDS_FRAME_GET_FRAME_END;
                 Redo = 1;
             }
             break;
@@ -322,10 +332,16 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
                 */
                 uiFramesReceived++;
                 int offset=0;
-                unsigned char Data[255];
+                unsigned char Data[258];
                 int count;
+
+                // Clear User Data
+                m_data.uiID=0;
                 while( (count=pFrameReceive->GetNDatFrame(&offset, Data)) > 0 )
                 {
+                    /*for(int j=0; j<count;j++)
+                        cout << std::hex << (int) Data[j] << " "; */
+                    /* cout << endl; */
                     cbFrame(count, Data, 0);
                 }
                 //pFrameReceive->ForEachUserFrame(&vds::cbFrame, 0 );

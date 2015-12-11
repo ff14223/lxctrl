@@ -17,23 +17,12 @@ typedef enum
 }enumFrameReceiveState;
 
 
-
-
-
-#define NDAT_STATUS				0x20
-#define NDAT_INTERN				0x00
-#define NDAT_BLOCKSTATUS		0x24
-#define NDAT_UEGMSG     		0xB3
-#define NDAT_SLOTINFORMTION		0xBB
-#define NDAT_SYSTEMINTERNAL		0xB
-
-
-typedef struct
+/*typedef struct
 {
     unsigned char bLen        __attribute__((packed));
     unsigned char bType       __attribute__((packed));
     unsigned char Data[255]   __attribute__((packed));
-}TVDSUserFrame;
+}TVDSUserFrame;*/
 
 typedef struct
 {
@@ -48,6 +37,7 @@ typedef struct
 
 #include "inc/interfaces.h"
 #include "inc/ISystemData.h"
+
 class vds
 {
     enumFrameReceiveState enFrameReceiveState;
@@ -55,6 +45,7 @@ class vds
     VdsFrame* pFrameReceive;
     IDatabase *pIDb;
     ISystemSignals *pSignals;
+    TVDSUserData m_data;
     int cbFrame(int Len, unsigned char *pData, unsigned int cooky);
     void VdsParse_NDAT_INTERN(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
     void VdsParse_NDAT_SLOTINFORMTION(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);

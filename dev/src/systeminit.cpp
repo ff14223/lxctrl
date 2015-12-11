@@ -2,6 +2,7 @@
 #include <src/settings.h>
 #include <src/ioimage.h>
 #include <src/mysqladapter.h>
+#include <src/alarm.h>
 
 void init(ISystemData *pSystemData)
 {
@@ -20,4 +21,12 @@ void init_signals(ISystemData *pSystemData, ISystemSignals *pSignals)
     pSignals->warning.pBmaAkkuFehler = pIo->getSignal("BmaAkkuFehler");
     pSignals->alarm.pInRaiseAlarm = pIo->getSignal("inRaiseAlarm");
     pSignals->alarm.pInRaiseHausalarm = pIo->getSignal("inHausAlarm");
+}
+
+
+void init_alarms(ISystemData *pSystemData, ISystemSignals *pSignals)
+{
+    pSystemData->alarm.pStoerung = new Alarm();
+    pSystemData->alarm.pRoutineMissing = new Alarm();
+    pSystemData->alarm.pHausalarm = new Alarm();
 }

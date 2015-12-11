@@ -1,24 +1,15 @@
+#include <iostream>
+
 #include "mysqladapter.h"
 #include "my_global.h"
 #include <mysql.h>
 #include <stdio.h>
+#include <string>
 #include "src/bmzuser.h"
 
 #define CON ((MYSQL*)dbConn)
 
 using namespace std;
-
-IBmzUser* MySqlAdapter::getBmzUser(long id)
-{
-    char statement[255];
-    sprintf(statement, "select * from bmauser where ID='%s'", id);
-    if (mysql_query(CON, statement))
-          return NULL;
-
-    BmzUser user = new BmzUser();
-
-
-}
 
 void finish_with_error(MYSQL *con)
 {
@@ -26,6 +17,56 @@ void finish_with_error(MYSQL *con)
     mysql_close(con);
     exit(1);
 }
+
+void MySqlAdapter::saveBmzUser(IBmzUser *pIUser)
+{
+    if( pIUser == NULL )
+        return;
+
+    BmzUser*pUser = static_cast<BmzUser*>(pIUser);
+
+    char statement[1024];
+    sprintf( statement, "update bmauser set cRoutineMissing='%d' where idbmauser='%ld'; ",
+             pIUser->getRoutineMissingCount(), pUser->getObjectId() );
+
+    if( mysql_query(CON, statement) )
+    {
+        printf("Error Updating User\n");
+        finish_with_error(CON);
+    }
+}
+
+
+IBmzUser* MySqlAdapter::getBmzUser(long id)
+{
+    char statement[255];
+    sprintf(statement, "select * from bmauser where ID='%ld'", id);
+    if (mysql_query(CON, statement))
+          return NULL;
+
+    MYSQL_RES *result = mysql_store_result(CON);
+
+    int num_fields = mysql_num_fields(result);
+
+    MYSQL_ROW row = mysql_fetch_row(result);
+    if( row == NULL )
+        return NULL;
+
+    for(int i = 0; i < num_fields; i++)
+    {
+        printf("%s ", row[i] ? row[i] : "NULL");
+    }
+
+    BmzUser* user = new BmzUser(row[3],id);
+    user->setRoutineMissingCount( atoi( row[2]) );
+    user->setObjectId( atol(row[0]) );
+    user->setRoutineMissingCount( atoi(row[4]) );
+    mysql_free_result(result);
+
+    return (IBmzUser*) user;
+}
+
+
 
 MySqlAdapter::~MySqlAdapter()
 {
@@ -44,7 +85,7 @@ MySqlAdapter::MySqlAdapter(const char *username, const char *pwd)
         finish_with_error(CON);
     }
 
-    CreateTables(); // Make sure all tables are there
+   // CreateTables(); // Make sure all tables are there
 }
 
 void MySqlAdapter::LogEntry(int Type, const char *Text)
@@ -77,6 +118,7 @@ void MySqlAdapter::CreateTables()
                     "`Erstellt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,"
                     "ID INT NULL,"
                     "`Name` VARCHAR(160) NULL,"
+                    "'cRoutineMissing' int,"
                     "PRIMARY KEY (`idbmauser`))") )
         {
             printf("Tabelle 'bmauser' konnte nicht erzeugt werden.\n");

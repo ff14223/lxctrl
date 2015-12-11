@@ -2,7 +2,7 @@ TEMPLATE = app
 CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
-
+CCFLAG += -std=c++11
 INCLUDEPATH += /usr/include/mysql
 
 LIBS += -lconfig++ -lmysqlclient
@@ -21,7 +21,6 @@ SOURCES += src/settings.cpp \
     src/mysqladapter.cpp \
     src/systeminit.cpp \
     src/controler.cpp \
-    ../backup/pgm/FFCtrl/CPU/alarmtask.c \
     src/alarm.cpp \
     src/bmzuser.cpp
 
@@ -54,4 +53,7 @@ OTHER_FILES += \
     src/vds/vdsframe.wth \
     src/vds/vds.c.txt \
     lxctrl.cfg
+
+DISTFILES += \
+    how-to.txt
 

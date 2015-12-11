@@ -97,6 +97,20 @@ int main()
 
         unsigned char data[32];
 
+        // enter production loop
+        cout << "Press CTRL-C to quit..." << endl;
+        systemData.pIDb->LogEntry( 1000, "lxctrl is up and running" );
+
+
+        /*
+         * Timing
+        */
+        int milliseconds = 1000;
+        struct timespec ts;
+
+        ts.tv_sec = milliseconds / 1000;
+        ts.tv_nsec = (milliseconds % 1000) * 1000000;
+
         /*
          * TESTING
         */
@@ -104,20 +118,24 @@ int main()
         if(  runTest.compare( "true" ) == 0 )
         {
             Test *baseTest = new Test();
-            baseTest->testVdsFrame( vds1 );
+
+            while( bTerminate == false )
+            {
+                nanosleep(&ts, NULL);
+                baseTest->testVdsFrame( vds1 );
+                break;
+            }
+
             return(1);
         }
 
-        // enter production loop
-        cout << "Press CTRL-C to quit..." << endl;
-        systemData.pIDb->LogEntry( 1000, "lxctrl is up and running" );
+
         MakeSysLogEntry("lxctrl is up and runnuing");
 
-        // loop
-        int milliseconds = 250;
-        struct timespec ts;
+        milliseconds=250;
         ts.tv_sec = milliseconds / 1000;
         ts.tv_nsec = (milliseconds % 1000) * 1000000;
+
 
         while( bTerminate == false )
         {

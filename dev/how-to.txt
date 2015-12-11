@@ -1,0 +1,15 @@
+Setup
+
+
+Debian
+
+bei einer Installation von CD eventuel die Referenz auf das CDROM aus
+/etc/apt/source.list entfernen und durch eine Speigelserver (zb http://ftp.de.debian.org/debian/)
+ersetzen
+
+
+sudo apt-get install build-essentianls
+sudo apt-get install git qt5-default
+
+
+git clone git://github.com/ff14223/lxctrl

@@ -11,6 +11,7 @@ public:
     void AssertEqual(int a, int b, char *what);
     void SimpleFrame();
     void TestFrame(vds *pVds);
+    void LoadSimulationFile(vds *pVds,const char *FileName);
 };
 
 #endif // TEST_H
