@@ -30,6 +30,7 @@ typedef struct
 {
     IDigitalSignal *pBmaAkkuFehler;
     IDigitalSignal *pBmaNetzFehler;
+    IDigitalSignal *pBmzCom1Offline;
 }sWarning;
 
 typedef struct
@@ -44,4 +45,13 @@ typedef struct
     sAlarm  alarm;
     sWarning   warning;
 }ISystemSignals;
+
+
+typedef struct
+{
+    ISystemData    Data;
+    ISystemSignals Signals;
+}ISystem;
+
+
 #endif // ISYSTEMDATA_H

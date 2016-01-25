@@ -45,6 +45,7 @@ class vds
     VdsFrame* pFrameReceive;
     IDatabase *pIDb;
     ISystemSignals *pSignals;
+    ISystem *pSystem;
     TVDSUserData m_data;
     int cbFrame(int Len, unsigned char *pData, unsigned int cooky);
     void VdsParse_NDAT_INTERN(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
@@ -52,8 +53,9 @@ class vds
     void VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
     void VdsParse_NDAT_0x56(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
     void VdsParse_NDAT_0x52(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
+    void VdsParse_NDAT_UEGMSG(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
 public:
-    vds(IDatabase*pIDb, ISystemSignals *pSignals);
+    vds(IDatabase*pIDb, ISystemSignals *pSignals, ISystem *pSystem);
     void ReceiveFrameStateMachine(unsigned char Data);
     void SendAck();
 

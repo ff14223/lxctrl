@@ -9,7 +9,22 @@ ersetzen
 
 
 sudo apt-get install build-essentianls
-sudo apt-get install git qt5-default
+sudo apt-get install git qt4-sdk
 
 
 git clone git://github.com/ff14223/lxctrl
+
+
+Datenbank Schnittstelle
+
+Tabelle 'log'
+In dieser Tabelle werden Einträge für Ereignisse geschrieben.
+
+ID - Datum Uhrzeit erstzellt - Nr - Text
+
+Nr  |	Text
+1000| System gestartet und betriebsbereit. Startgrund kann nicht ermittelt werden
+ 235| Com 1 Offline
+2002| Alarm ausgelöst
+1000| BMZ Teilnehmer nicht vorhandnen
+

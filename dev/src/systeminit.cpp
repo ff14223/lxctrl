@@ -19,14 +19,15 @@ void init_signals(ISystemData *pSystemData, ISystemSignals *pSignals)
     IIoImage *pIo = pSystemData->pIo;
     pSignals->bma.pISDNBusStoerung = pIo->getSignal("ISDNBusStoerung");
     pSignals->warning.pBmaAkkuFehler = pIo->getSignal("BmaAkkuFehler");
+    pSignals->warning.pBmzCom1Offline = pIo->getSignal("BmzComOneOffline");
     pSignals->alarm.pInRaiseAlarm = pIo->getSignal("inRaiseAlarm");
     pSignals->alarm.pInRaiseHausalarm = pIo->getSignal("inHausAlarm");
 }
 
 
-void init_alarms(ISystemData *pSystemData, ISystemSignals *pSignals)
+void init_alarms(ISystem *pSystem)
 {
-    pSystemData->alarm.pStoerung = new Alarm();
-    pSystemData->alarm.pRoutineMissing = new Alarm();
-    pSystemData->alarm.pHausalarm = new Alarm();
+    pSystem->Data.alarm.pStoerung = new Alarm("Stoerungsalarm", &(pSystem->Data));
+    pSystem->Data.alarm.pRoutineMissing = new Alarm("FehlendeRoutine", &(pSystem->Data));
+    pSystem->Data.alarm.pHausalarm = new Alarm("Hausalarm", &(pSystem->Data));
 }

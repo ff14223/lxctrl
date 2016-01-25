@@ -6,10 +6,11 @@ using namespace std;
 
 
 
-vds::vds(IDatabase *pIDb, ISystemSignals *pSignals)
+vds::vds(IDatabase *pIDb, ISystemSignals *pSignals, ISystem *pSystem)
 {
     this->pIDb = pIDb;                                  // database interface
     this->pSignals = pSignals;
+    this->pSystem = pSystem;
     pFrameReceive = new VdsFrame();
     enFrameReceiveState = VDS_FRAME_WAIT_FOR_START;
 }
@@ -32,6 +33,7 @@ void vds::VdsParse_NDAT_SLOTINFORMTION(unsigned char bLen, unsigned char*Data, T
         case 0x38:
             pSignals->bma.pISDNBusStoerung->set( true );
             pIDb->LogEntry( 1001, "ASchicht 1 Fehler (ISDN S0)");
+            pSystem->Data.alarm.pStoerung->raise();
             break;
 
         case 0xB8:
@@ -96,11 +98,122 @@ void vds::VdsParse_NDAT_0x56(unsigned char bLen, unsigned char*Data, TVDSUserDat
 
 }
 
+
+void vds::VdsParse_NDAT_UEGMSG(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData)
+{
+    cout << __FUNCTION__ << endl;
+
+    if( Data[0] != 0x28 )
+        return;
+
+    if( Data[1] == 1 )
+        return;
+
+    /*
+    ** ID
+    */
+    int id = GetBcdValue( Data[5] );
+    id += GetBcdValue( Data[4] ) * 100;
+    id += GetBcdValue( Data[3] ) * 10000;
+
+    /*
+    ** Status der Meldelinien
+    */
+    unsigned short wMLState = Data[8] | Data[9] << 8;
+
+    /*
+    ** Grund war Meldelinienänderung von Linie wMLChanged
+    */
+    unsigned char bMLChanged = Data[7] >> 4;
+    unsigned char bStoerung = Data[7] & 0xF;
+
+    if( Data[7] == 0 )
+    {
+        pSystem->Data.pIDb->LogEntry(1000, "Testmeldung BMZ Teilnehmer");
+        return;
+    }
+
+    if( bMLChanged == 0 )    /* in diesem Fall ware es keine Alarmmeldung */
+        return;
+
+    //wMLMask = 1 << (wMLChanged-1);
+    char bSignalText = Data[6];
+
+    IBmzUser *pUser = pIDb->getBmzUser( id );
+
+    if( pUser == 0  )
+    {
+        // TODO Verhalten bei Alarm ID nicht vorhanden
+        pSystem->Data.pIDb->LogEntry(1000, "BMZ Teilnehmer nicht vorhanden");
+        pSystem->Data.alarm.pStoerung->raise();
+    }
+    else
+    {
+        pSystem->Data.pIDb->LogEntry(1001, "Alarm BMZ Teilnehemer");
+        pSystem->Data.alarm.pStoerung->raise();
+    }
+
+
+#if 0
+    /*
+    ** Mit allen Usern vergleichen
+    */
+    for(UserIndex = 0; UserIndex < BmaUsers.iCount; UserIndex++)
+    {
+        pUser = &(BmaUsers.BmaUser[UserIndex]);
+
+        /*
+        ** User ist disabled
+        */
+        if( pUser->Disabled )
+        {
+            /* LogWriteString((UDINT)"Disabled"); */
+            continue;
+        }
+
+        /*
+        ** Check ID
+        */
+        if( (pUser->wActivation & ID_MUST_MATCH) && (pUser->id != (unsigned int) id))
+        {
+            /* LogWriteString((UDINT)"ID must MATCH");	*/
+            continue;
+        }
+
+        /* LogWriteString((UDINT)"Teilnehmer mit ID gefunden"); */
+
+
+        /*
+        ** Meldelinie
+        */
+        if( (pUser->wActivation & ML_MASK_MUST_MATCH) && ((pUser->wMLMask & wMLMask)==0) )
+        {
+            /* LogWriteString((UDINT)"ML Mask does not match");	 */
+            continue;
+        }
+
+        /*
+        ** Signal Text
+        */
+        if( pUser->wActivation & SIGNAL_TEXT_MUST_MATCH )
+        {
+            if( pUser->SignalText != bSignalText )
+                continue;
+        }
+
+        /* LogWriteString((UDINT)"BMA Alarm ausl�sen.."); */
+        VdsActivateBMZTeilnehmer(pUser);
+    }
+#endif
+
+}
+
 void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData)
 {
     IBmzUser *pUser;
     char Text[255];
 
+    cout << __FUNCTION__ << endl;
     switch( Data[1] )
     {
         case 0x00:
@@ -134,11 +247,14 @@ void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, T
                 pIDb->LogEntry( 203, "Routine von Teilnehmer fehlt.");
                 pIDb->LogEntry( 203, "Unbekannte ID.");
             }
+            pSystem->Data.alarm.pRoutineMissing->raise();
+            pSystem->Data.alarm.pStoerung->raise();
             break;
 
         case 0x01:
             pIDb->LogEntry( 231, "Akku Fehler");
             pSignals->warning.pBmaAkkuFehler->set( true );
+            pSystem->Data.alarm.pStoerung->raise();
             break;
 
         case 0x02:
@@ -149,14 +265,28 @@ void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, T
         case 0x03:
             pIDb->LogEntry( 233, "Netz Fehler");
             pSignals->warning.pBmaNetzFehler->set( true );
+            pSystem->Data.alarm.pStoerung->raise();
             break;
 
         case 0x04:
             pIDb->LogEntry( 234, "Netz OK");
             pSignals->warning.pBmaNetzFehler->set( false );
             break;
+
+        case 0x0B:
+            pIDb->LogEntry( 235, "COM1 Offline");
+            pSignals->warning.pBmzCom1Offline->set(true);
+            pSystem->Data.alarm.pStoerung->raise();
+            break;
+
+        case 0x0C:
+            pIDb->LogEntry( 236, "COM1 Online");
+            pSignals->warning.pBmzCom1Offline->set(false);
+            break;
+
         default:
-            pIDb->LogEntry( 1002, "Missing case");
+            sprintf(Text,"%s %d Missing Case %d",__FUNCTION__,__LINE__,Data[1] );
+            pIDb->LogEntry( 1002, Text);
             break;
 
     }
@@ -183,10 +313,10 @@ int vds::cbFrame(int Len, unsigned char *pData, unsigned int cooky)
             VdsParse_NDAT_SLOTINFORMTION( Len, &pData[1], &m_data);
             break;
 
-        /*case NDAT_UEGMSG:
-            VdsParse_NDAT_UEGMSG( pUserFrame->bLen, pUserFrame->Data, pUserData);
+        case NDAT_UEGMSG:
+            VdsParse_NDAT_UEGMSG( Len, &pData[1], &m_data);
             break;
-*/
+
         case NDAT_SYSTEMINTERNAL:
             VdsParse_NDAT_SYSTEMINTERNAL( Len, &pData[1], &m_data);
             break;

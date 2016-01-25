@@ -16,11 +16,14 @@
 #include <time.h>
 
 #include <inc/ISystemData.h>
-ISystemData systemData={0};             // global data storage
-ISystemSignals systemSignals={0};
+ISystem System={0};
 
+/* Init functions are only callable from here */
 void init(ISystemData *pSystemData);
 void init_signals(ISystemData *pSystemData, ISystemSignals *pSignals);
+void init_alarms(ISystem *pSystem);
+void RunTestsIfEnabled(vds *pVds);
+
 using namespace std;
 
 void MakeSysLogEntry(const char *Text)
@@ -52,21 +55,24 @@ int main()
 
     try
     {
+        // ----------------------------------------------------
         // INIT
-        init( &systemData );
-        init_signals(&systemData, &systemSignals);
-        // Database
-        /*std::string dbUser = getSettings()->Cfg()->lookup("db.user");
-        std::string dbPwd = getSettings()->Cfg()->lookup("db.pwd");
-        IDatabase *db = new MySqlAdapter( dbUser.c_str(), dbPwd.c_str() ); */
+        // ----------------------------------------------------
+        init( &(System.Data) );
+        init_signals( &(System.Data), &(System.Signals));
+        init_alarms( &System );
 
 
         std::string bmaDeviceName = getSettings()->Cfg()->lookup("bma.device");
         std::string bmaLogFileName = getSettings()->Cfg()->lookup("bma.input-log");
 
-        vds *vds1 = new vds( systemData.pIDb, &systemSignals );
+        vds *vds1 = new vds( System.Data.pIDb, &(System.Signals), &System);
 
+
+        // ----------------------------------------------------
         // open serial device for BMZ Connection
+        // TODO Move to seperate file
+        // ----------------------------------------------------
         fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
         if( fdBmaDevice == -1 )
             cout << "WARNING: No BMA Device set. (" << bmaDeviceName << ")"<< endl;
@@ -95,59 +101,39 @@ int main()
         if( fdBmaLogFile  < 0 )
             cout << "WARNING: Could not open log..." << endl;
 
-        unsigned char data[32];
 
+        // ----------------------------------------------------
+        // Testing stuff
+        // ----------------------------------------------------
+        RunTestsIfEnabled(vds1);
+
+
+        // ----------------------------------------------------
         // enter production loop
+        // ----------------------------------------------------
         cout << "Press CTRL-C to quit..." << endl;
-        systemData.pIDb->LogEntry( 1000, "lxctrl is up and running" );
+        System.Data.pIDb->LogEntry( 1000, "lxctrl is up and running" );
 
-
-        /*
-         * Timing
-        */
-        int milliseconds = 1000;
-        struct timespec ts;
-
-        ts.tv_sec = milliseconds / 1000;
-        ts.tv_nsec = (milliseconds % 1000) * 1000000;
-
-        /*
-         * TESTING
-        */
-        std::string runTest = getSettings()->Cfg()->lookup("lxctrl.runtest");
-        if(  runTest.compare( "true" ) == 0 )
-        {
-            Test *baseTest = new Test();
-
-            while( bTerminate == false )
-            {
-                nanosleep(&ts, NULL);
-                baseTest->testVdsFrame( vds1 );
-                break;
-            }
-
-            return(1);
-        }
 
 
         MakeSysLogEntry("lxctrl is up and runnuing");
 
-        milliseconds=250;
+        int milliseconds = 250;
+        struct timespec ts;
         ts.tv_sec = milliseconds / 1000;
         ts.tv_nsec = (milliseconds % 1000) * 1000000;
-
+        unsigned char data[128];
 
         while( bTerminate == false )
         {
             nanosleep(&ts, NULL);
 
-            systemData.pIo->UpdateInputs();
+            System.Data.pIo->UpdateInputs();
             
             // get char from serial port
             int nrBytesRead = read( fdBmaDevice, data, sizeof(data));
             if( nrBytesRead > 0)
             {
-
                 cout << ":" ;
 
                 // Dmp BMA Data
@@ -159,13 +145,13 @@ int main()
             }
 
             // allgemeine Dinge
-            ctrl_general(&systemData, &systemSignals);
+            ctrl_general( &(System.Data), &(System.Signals));
 
             // check for alarm
-            ctrl_alarm(&systemData, &systemSignals);
+            ctrl_alarm( &(System.Data), &(System.Signals));
 
             // handle state machines
-            systemData.pIo->UpdateOutputs();
+            System.Data.pIo->UpdateOutputs();
         }
     }
     catch( exception& e)
@@ -184,3 +170,30 @@ int main()
     return 0;
 }
 
+void RunTestsIfEnabled(vds *pVds)
+{
+    /*
+     * Timing
+    */
+    int milliseconds = 1000;
+    struct timespec ts;
+
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
+
+    /*
+     * TESTING
+    */
+    std::string runTest = getSettings()->Cfg()->lookup("lxctrl.runtest");
+    if(  runTest.compare( "true" ) == 0 )
+    {
+        Test *baseTest = new Test();
+
+        while( bTerminate == false )
+        {
+            nanosleep(&ts, NULL);
+            baseTest->testVdsFrame( pVds );
+            break;
+        }
+    }
+}
