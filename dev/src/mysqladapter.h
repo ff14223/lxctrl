@@ -3,6 +3,8 @@
 
 
 #include "inc/IDatabase.h"
+#include "inc/ibmzuserstatus.h"
+#include "inc/IBmzUser.h"
 
 class MySqlAdapter : public IDatabase
 {
@@ -13,7 +15,9 @@ public:
     MySqlAdapter(const char *, const char* );
     void  LogEntry(int,const char *);
     IBmzUser* getBmzUser(long id);
-    void saveBmzUser(IBmzUser *pIUser);
+    void saveBmzUserStatus(IBmzUserStatus *pIUserStatus);
+    bool TableExists(const char *Table);
+    IBmzUserStatus*getBmzUserStatus(IBmzUser *pIUser);
 };
 
 #endif // MYSQLADAPTER_H

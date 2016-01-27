@@ -1,5 +1,5 @@
 Setup
-
+-----
 
 Debian
 
@@ -16,7 +16,7 @@ git clone git://github.com/ff14223/lxctrl
 
 
 Datenbank Schnittstelle
-
+------------------------
 Tabelle 'log'
 In dieser Tabelle werden Einträge für Ereignisse geschrieben.
 
@@ -28,3 +28,7 @@ Nr  |	Text
 2002| Alarm ausgelöst
 1000| BMZ Teilnehmer nicht vorhandnen
 
+Konfiguration
+-------------
+in der datei /etc/lxctrl.cfg werden die Einstellungen vorgenommen, die für einen Programmstart
+notwendig sind. Die einzelnen Optionen sind in der Datei selbst hinterlegt.

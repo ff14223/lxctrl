@@ -140,8 +140,11 @@ void vds::VdsParse_NDAT_UEGMSG(unsigned char bLen, unsigned char*Data, TVDSUserD
     char bSignalText = Data[6];
 
     IBmzUser *pUser = pIDb->getBmzUser( id );
+    if( pUser == NULL )
+        pUser = pIDb->getBmzUser( 0 );
 
-    if( pUser == 0  )
+    IBmzUserStatus *pStatus = pIDb->getBmzUserStatus(pUser);
+    if( pStatus == 0  )
     {
         // TODO Verhalten bei Alarm ID nicht vorhanden
         pSystem->Data.pIDb->LogEntry(1000, "BMZ Teilnehmer nicht vorhanden");
@@ -151,6 +154,9 @@ void vds::VdsParse_NDAT_UEGMSG(unsigned char bLen, unsigned char*Data, TVDSUserD
     {
         pSystem->Data.pIDb->LogEntry(1001, "Alarm BMZ Teilnehemer");
         pSystem->Data.alarm.pStoerung->raise();
+        // ToDo Set Status to Active
+        // pStatus->
+        pIDb->saveBmzUserStatus( pStatus );
     }
 
 
@@ -231,7 +237,9 @@ void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, T
 
             if( pUser )
             {
-                int count = pUser->getRoutineMissingCount();
+                IBmzUserStatus * pStatus = pIDb->getBmzUserStatus( pUser );
+
+                int count = pStatus->getRoutineMissingCount();
                 if( count<= 0 )
                 {
                     // erstes Auftreten
@@ -239,8 +247,10 @@ void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, T
                     pIDb->LogEntry( 203, Text);
 
                 }
-                pUser->setRoutineMissingCount(++count);
-                pIDb->saveBmzUser( pUser );
+                pStatus->setRoutineMissingCount(++count);
+                pIDb->saveBmzUserStatus( pStatus );
+                delete pStatus;
+                delete pUser;
             }
             else
             {

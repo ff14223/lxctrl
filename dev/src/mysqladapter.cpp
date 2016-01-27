@@ -5,7 +5,9 @@
 #include <mysql.h>
 #include <stdio.h>
 #include <string>
+
 #include "src/bmzuser.h"
+#include "src/bmzuserstatus.h"
 
 #define CON ((MYSQL*)dbConn)
 
@@ -18,24 +20,63 @@ void finish_with_error(MYSQL *con)
     exit(1);
 }
 
-void MySqlAdapter::saveBmzUser(IBmzUser *pIUser)
+void MySqlAdapter::saveBmzUserStatus(IBmzUserStatus *pIUserStatus)
 {
-    if( pIUser == NULL )
+    if( pIUserStatus == NULL )
         return;
 
-    BmzUser*pUser = static_cast<BmzUser*>(pIUser);
+    BmzUserStatus*pStatus = static_cast<BmzUserStatus*>(pIUserStatus);
 
     char statement[1024];
-    sprintf( statement, "update bmauser set cRoutineMissing='%d' where idbmauser='%ld'; ",
-             pIUser->getRoutineMissingCount(), pUser->getObjectId() );
+    int count1 = pIUserStatus->getRoutineMissingCount();
+    int count2=0;
+    string status=pStatus->getStatus();
+    if( pStatus->getIsNew() )
+        sprintf( statement,
+                 "INSERT INTO `lxctrl`.`bmauserstatus` "
+                 "(`idbmauser`,`accesses`,`status`,`count1`,`count2`) "
+                 "VALUES(%ld,CURRENT_TIMESTAMP,'%s',%d,%d) ",
+                 pStatus->getObjectId(),status.c_str(),count1,count2 );
+    else
+        sprintf( statement, "update bmauserstatus set count1='%d', "
+                 "status='%s' where idbmauser='%ld'; ",
+             pIUserStatus->getRoutineMissingCount(), status.c_str(),pStatus->getObjectId() );
 
     if( mysql_query(CON, statement) )
     {
-        printf("Error Updating User\n");
+        printf("Error Updating Status\n");
         finish_with_error(CON);
     }
 }
 
+IBmzUserStatus*MySqlAdapter::getBmzUserStatus(IBmzUser *pIUser)
+{
+    if( pIUser == NULL )
+        return NULL;
+
+    BmzUser *pUser = static_cast<BmzUser*>(pIUser);
+    BmzUserStatus *status = new BmzUserStatus(pUser->getObjectId() );
+    status->setIsNew(true);
+
+    char statement[255];
+    sprintf(statement, "select * from bmauserstatus where idbmauser='%ld'", pUser->getObjectId());
+    if (mysql_query(CON, statement))
+          return status;
+
+    MYSQL_RES *result = mysql_store_result(CON);
+    MYSQL_ROW row = mysql_fetch_row(result);
+    if( row == NULL )
+        return NULL;
+
+    int num_fields = mysql_num_fields(result);
+
+    if( row == NULL )
+        return status;    // return new object
+
+    status->setIsNew( false );
+
+    return status;
+}
 
 IBmzUser* MySqlAdapter::getBmzUser(long id)
 {
@@ -57,10 +98,11 @@ IBmzUser* MySqlAdapter::getBmzUser(long id)
         printf("%s ", row[i] ? row[i] : "NULL");
     }
 
-    BmzUser* user = new BmzUser(row[3],id);
-    user->setRoutineMissingCount( atoi( row[2]) );
-    user->setObjectId( atol(row[0]) );
-    user->setRoutineMissingCount( atoi(row[4]) );
+
+    char AlarmCond = row[5][0];
+    string AlarmConfiguration = row[6];
+    long bmauserid = atoi(row[0]);
+    BmzUser* user = new BmzUser(bmauserid, row[3], id, AlarmCond, AlarmConfiguration);
     mysql_free_result(result);
 
     return (IBmzUser*) user;
@@ -85,8 +127,11 @@ MySqlAdapter::MySqlAdapter(const char *username, const char *pwd)
         finish_with_error(CON);
     }
 
-   // CreateTables(); // Make sure all tables are there
+    CreateTables(); // Make sure all tables are there
 }
+
+
+
 
 void MySqlAdapter::LogEntry(int Type, const char *Text)
 {
@@ -98,10 +143,31 @@ void MySqlAdapter::LogEntry(int Type, const char *Text)
       }
 }
 
+bool MySqlAdapter::TableExists(const char *Table)
+{
+     //MYSQL_RES *result = mysql_store_result(CON);
+     char Query[255];
+     bool bresult=true;
+     sprintf(Query, "SELECT * FROM information_schema.tables  WHERE table_schema = 'lxctrl' "
+                    "AND table_name = '%s' LIMIT 1", Table);
+
+
+     mysql_query(CON, Query);
+     MYSQL_RES *result = mysql_store_result(CON);
+     if( result == NULL || result->row_count == 0)
+     {
+        bresult=false;
+        cout << "Table not found " << Table << endl;
+     }
+
+     mysql_free_result(result);
+
+     return bresult;
+}
 
 void MySqlAdapter::CreateTables()
 {
-    if( mysql_query(CON, "SELECT 1 FROM lxctrl LIMIT 1;") )
+    if( TableExists("log") == false )
     {
         mysql_query(CON, "CREATE TABLE `lxctrl`.`log` ( "
                     "`idlog` INT NOT NULL,"
@@ -111,19 +177,52 @@ void MySqlAdapter::CreateTables()
                     "PRIMARY KEY (`idlog`))");
     }
 
-    if( mysql_query(CON, "SELECT 1 FROM bmauser LIMIT 1;") )
+    if( TableExists("bmauser") == false )
     {
         if( mysql_query(CON, "CREATE TABLE `lxctrl`.`bmauser` ( "
-                    "`idbmauser` INT NOT NULL,"
+                    "`idbmauser` int(11) NOT NULL AUTO_INCREMENT,"
                     "`Erstellt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,"
                     "ID INT NULL,"
                     "`Name` VARCHAR(160) NULL,"
-                    "'cRoutineMissing' int,"
+                    "`cRoutineMissing` int,"
+                    "`AlarmCond` VARCHAR(1) NULL,"
+                    "`AlarmConfig` VARCHAR(255) NULL,"
                     "PRIMARY KEY (`idbmauser`))") )
         {
             printf("Tabelle 'bmauser' konnte nicht erzeugt werden.\n");
             finish_with_error(CON);
         }
+    
+        /*
+         * Create Default User
+        */
+        if( mysql_query(CON, "insert into lxctrl.bmauser "
+                        "(`idbmauser`,`Erstellt`,`ID`,`Name`,`cRoutineMissing`,`AlarmCond`,`AlarmConfig`) "
+                        "VALUES(0,CURRENT_TIMESTAMP,0,'Default User',0,'F','AL')" ) )
+        {
+            printf("Default BMA User konnte nicht angelegt werden.\n");
+            finish_with_error(CON);
+        }
     }
+
+    if( TableExists("bmauserstatus") == false )
+    {
+        if( mysql_query(CON, "CREATE TABLE `lxctrl`.`bmauserstatus` ( "
+                    "`idbmauser` int(11) NOT NULL,"
+                    "`accesses` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,"
+                    "`status` VARCHAR(80) NULL,"
+                    "`count1` int,"
+                    "`count2` int,"
+                    "PRIMARY KEY (`idbmauser`))") )
+        {
+            printf("Tabelle 'bmauserstatus' konnte nicht erzeugt werden.\n");
+            finish_with_error(CON);
+        }
+    }
+
+
+
+
+    
 }
 

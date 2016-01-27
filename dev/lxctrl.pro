@@ -22,7 +22,10 @@ SOURCES += src/settings.cpp \
     src/systeminit.cpp \
     src/controler.cpp \
     src/alarm.cpp \
-    src/bmzuser.cpp
+    src/bmzuser.cpp \
+    src/bmzuserstatus.cpp \
+    src/dbobject.cpp \
+    src/terminal.cpp
 
 HEADERS += \
     src/settings.h \
@@ -47,7 +50,11 @@ HEADERS += \
     inc/IAlarm.h \
     inc/IBmzUser.h \
     src/bmzuser.h \
-    inc/ILogger.h
+    inc/ILogger.h \
+    inc/ibmzuserstatus.h \
+    inc/bmzuserstatus.h \
+    src/bmzuserstatus.h \
+    src/dbobject.h
 
 OTHER_FILES += \
     src/vds/vdsframe.wth \

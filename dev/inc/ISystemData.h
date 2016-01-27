@@ -49,9 +49,16 @@ typedef struct
 
 typedef struct
 {
+    unsigned long tloop;
+}IValues;
+
+typedef struct
+{
     ISystemData    Data;
     ISystemSignals Signals;
+    IValues          Values;
 }ISystem;
+
 
 
 #endif // ISYSTEMDATA_H

@@ -3,13 +3,15 @@
 
 #include <iostream>
 
+using namespace std;
+
 class IBmzUser
 {
 public:
     virtual long getBmaId()=0;
-    virtual std::string getName()=0;
-    virtual int getRoutineMissingCount()=0;
-    virtual void setRoutineMissingCount(int value)=0;
+    virtual bool isDisabled()=0;
+    virtual string getName()=0;
+    virtual string getAlarmConfiguration()=0;
 };
 
 #endif // IBMZUSER_H

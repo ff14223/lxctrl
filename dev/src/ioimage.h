@@ -27,6 +27,7 @@ public:
     IDigitalSignal* getSignal(const std::string SignalName);
     void UpdateInputs();
     void UpdateOutputs();
+    void DumpSignals();
 };
 
 

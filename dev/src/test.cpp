@@ -173,9 +173,9 @@ void TestRoutineFehlt(vds *pVds)
 
 void Test::TestFrame(vds *pVds)
 {
-    //TestRoutineFehlt(pVds);
+    TestRoutineFehlt(pVds);
     TestComOffline(pVds);
-    //TestVdsUGTest(pVds);
+    TestVdsUGTest(pVds);
     TestVdsUGAlarm(pVds);
 }
 

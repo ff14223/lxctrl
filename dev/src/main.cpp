@@ -42,6 +42,7 @@ void sig_handler(int signum)
 
 void ctrl_general(ISystemData *pSystemData, ISystemSignals *pSignals);
 void ctrl_alarm(ISystemData *pSystemData, ISystemSignals *pSignals);
+void printpage(ISystem *pSystem);
 
 int main()
 {
@@ -124,9 +125,16 @@ int main()
         ts.tv_nsec = (milliseconds % 1000) * 1000000;
         unsigned char data[128];
 
+        printf("\e[?25l");  //Cursor off
+        struct timespec requestStart, requestEnd;
+
         while( bTerminate == false )
         {
             nanosleep(&ts, NULL);
+
+            clock_gettime(CLOCK_REALTIME, &requestStart);
+
+
 
             System.Data.pIo->UpdateInputs();
             
@@ -152,6 +160,15 @@ int main()
 
             // handle state machines
             System.Data.pIo->UpdateOutputs();
+
+            // Show
+            printpage(&System);
+
+            clock_gettime(CLOCK_REALTIME, &requestEnd);
+            System.Values.tloop = ( requestEnd.tv_sec - requestStart.tv_sec )
+              + ( requestEnd.tv_nsec - requestStart.tv_nsec );
+
+
         }
     }
     catch( exception& e)
@@ -162,6 +179,8 @@ int main()
     }
 
     cout << endl << "Closing File Descriptors."  << endl ;
+    printf("\e[?25h");
+
     if( fdBmaDevice > 0 )
         close( fdBmaDevice );
     if( fdBmaLogFile > 0)

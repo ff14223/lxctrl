@@ -1,8 +1,12 @@
 #include <iostream>
 #include "bmzuser.h"
 
-long BmzUser::getObjectId(){return m_objectid;}
-void BmzUser::setObjectId(long id){m_objectid=id;}
+
+bool BmzUser::isDisabled()
+{
+    return false;
+}
+
 
 long BmzUser::getBmaId()
 {
@@ -14,13 +18,22 @@ std::string BmzUser::getName()
     return m_Name;
 }
 
+char BmzUser::getAlarmCondition()
+{
+    return m_AlarmCond;
+}
 
-int BmzUser::getRoutineMissingCount() { return m_icRoutineMissing;}
-void BmzUser::setRoutineMissingCount(int value ){m_icRoutineMissing=value;}
 
-BmzUser::BmzUser(string Name, long id)
+std::string BmzUser::getAlarmConfiguration()
+{
+    return m_AlarmConf;
+}
+
+BmzUser::BmzUser(long bmauserid, string Name, long id,char AlarmCondition, string AlarmConfig) : DbObject(bmauserid)
 {
     m_BmaId = id;
     m_icRoutineMissing = 0;
     m_Name = Name;
+    m_AlarmCond = AlarmCondition;
+    m_AlarmConf = AlarmConfig;
 }
