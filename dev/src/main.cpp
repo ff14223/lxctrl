@@ -130,6 +130,7 @@ int main()
 
         while( bTerminate == false )
         {
+            cout << __LINE__ << endl;
             nanosleep(&ts, NULL);
 
             clock_gettime(CLOCK_REALTIME, &requestStart);
@@ -152,6 +153,8 @@ int main()
                     vds1->ReceiveFrameStateMachine( data[i] );
             }
 
+            cout << __LINE__ << endl;
+
             // allgemeine Dinge
             ctrl_general( &(System.Data), &(System.Signals));
 
@@ -161,6 +164,7 @@ int main()
             // handle state machines
             System.Data.pIo->UpdateOutputs();
 
+            cout << __LINE__ << endl;
             // Show
             printpage(&System);
 
