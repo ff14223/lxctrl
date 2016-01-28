@@ -170,7 +170,7 @@ void MySqlAdapter::CreateTables()
     if( TableExists("log") == false )
     {
         mysql_query(CON, "CREATE TABLE `lxctrl`.`log` ( "
-                    "`idlog` INT NOT NULL,"
+                    "`idlog` INT NOT NULL AUTO_INCREMENT,"
                     "`Erstellt` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,"
                     "`Nr` INT NULL,"
                     "`Text` VARCHAR(160) NULL,"
