@@ -151,6 +151,19 @@ CanIo::CanIo()
     {
         cout << "CAN could not create socket" << endl;
     }
+
+    struct sockaddr_can addr;
+    struct ifreq ifr;
+    addr.can_family = AF_CAN;
+    /*memset(&ifr.ifr_name, 0, sizeof(ifr.ifr_name));
+    strncpy(ifr.ifr_name, ptr, nbytes);*/
+    addr.can_ifindex = 0; /* any can interface */
+
+    if( bind( m_Socket, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+    {
+        perror("bind");
+    }
+
 }
 
 /*Objekt
