@@ -26,6 +26,7 @@ public:
 
 void ioimage::UpdateInputs()
 {
+    pCanIo->Test();
 }
 
 void ioimage::UpdateOutputs()
@@ -43,6 +44,8 @@ IIoImage* getIOImage()
 
 ioimage::ioimage()
 {
+    pCanIo = new CanIo();
+
     GenerateInternalSignals();      // internal Signals
 
     const Setting &s = getSettings()->get("SIGNAL");

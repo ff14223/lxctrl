@@ -11,11 +11,14 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <src/mysqladapter.h>
-
-
+#include <pthread.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include <inc/ISystemData.h>
+
+
+
 ISystem System={0};
 
 /* Init functions are only callable from here */
@@ -44,7 +47,50 @@ void ctrl_general(ISystemData *pSystemData, ISystemSignals *pSignals);
 void ctrl_alarm(ISystemData *pSystemData, ISystemSignals *pSignals);
 void printpage(ISystem *pSystem);
 
+#define MAX_THREADS 1
+
+static int ret[MAX_THREADS];
+static pthread_t th[MAX_THREADS];
+
+
+typedef struct
+{
+    pthread_attr_t attrib;
+    struct sched_param sched_param;
+    pthread_t id;
+}LxThreadInfo;
+
+static LxThreadInfo MainThread;
+void* lxctrl_main(void*);
+void Start()
+{
+
+
+    int hr =  pthread_attr_init( &(MainThread.attrib) );
+    hr=pthread_attr_setinheritsched(&(MainThread.attrib), PTHREAD_EXPLICIT_SCHED);
+
+    MainThread.sched_param.__sched_priority = 20;
+
+    if( pthread_create ( &(MainThread.id), NULL, &lxctrl_main, NULL) != 0 )
+    {
+             cout <<  "Fehler beim erstellen der Threads\n";
+             exit (EXIT_FAILURE);
+    }
+
+    hr = pthread_setschedparam( MainThread.id, SCHED_RR, &(MainThread.sched_param) );
+
+
+}
+
 int main()
+{
+    Start();
+
+    int *ret;
+    pthread_join (MainThread.id, (void**) &ret);
+}
+
+void* lxctrl_main(void*)
 {
 
     cout << "Linux Ctrl" << endl;
@@ -125,17 +171,21 @@ int main()
         ts.tv_nsec = (milliseconds % 1000) * 1000000;
         unsigned char data[128];
 
-        printf("\e[?25l");  //Cursor off
+        //printf("\e[?25l");  //Cursor off
         struct timespec requestStart, requestEnd;
+
+        clock_gettime(CLOCK_REALTIME, &requestEnd); /* init value to now */
 
         while( bTerminate == false )
         {
-            cout << __LINE__ << endl;
+            /* wait */
             nanosleep(&ts, NULL);
-
+            /*
+             * get time elapsed
+             */
             clock_gettime(CLOCK_REALTIME, &requestStart);
-
-
+            System.Values.tSleep = ( requestStart.tv_sec - requestEnd.tv_sec ) * 1000
+              + ( requestStart.tv_nsec - requestEnd.tv_nsec ) / 1000 / 1000;
 
             System.Data.pIo->UpdateInputs();
             
@@ -153,7 +203,6 @@ int main()
                     vds1->ReceiveFrameStateMachine( data[i] );
             }
 
-            cout << __LINE__ << endl;
 
             // allgemeine Dinge
             ctrl_general( &(System.Data), &(System.Signals));
@@ -164,13 +213,17 @@ int main()
             // handle state machines
             System.Data.pIo->UpdateOutputs();
 
-            cout << __LINE__ << endl;
+
+
+            // This realy takes time
             // Show
-            printpage(&System);
+            //printpage(&System);
+
 
             clock_gettime(CLOCK_REALTIME, &requestEnd);
-            System.Values.tloop = ( requestEnd.tv_sec - requestStart.tv_sec )
-              + ( requestEnd.tv_nsec - requestStart.tv_nsec );
+            System.Values.tloop = ( requestEnd.tv_sec - requestStart.tv_sec ) * 1000
+              + ( requestEnd.tv_nsec - requestStart.tv_nsec ) / 1000 / 1000;
+
 
 
         }

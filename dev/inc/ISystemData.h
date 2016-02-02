@@ -50,6 +50,7 @@ typedef struct
 typedef struct
 {
     unsigned long tloop;
+    unsigned long tSleep;       /* time between activations */
 }IValues;
 
 typedef struct

@@ -4,8 +4,8 @@ CONFIG -= app_bundle
 CONFIG -= qt
 CCFLAG += -std=c++11
 INCLUDEPATH += /usr/include/mysql
-
-LIBS += -lconfig++ -lmysqlclient
+QMAKE_CXXFLAGS += -pthread
+LIBS += -lconfig++ -lmysqlclient  -pthread
 
 SOURCES += src/settings.cpp \
     src/vds/vds.cpp \
@@ -25,7 +25,9 @@ SOURCES += src/settings.cpp \
     src/bmzuser.cpp \
     src/bmzuserstatus.cpp \
     src/dbobject.cpp \
-    src/terminal.cpp
+    src/terminal.cpp \
+    src/canio.cpp \
+    src/cannode.cpp
 
 HEADERS += \
     src/settings.h \
@@ -54,7 +56,10 @@ HEADERS += \
     inc/ibmzuserstatus.h \
     inc/bmzuserstatus.h \
     src/bmzuserstatus.h \
-    src/dbobject.h
+    src/dbobject.h \
+    src/canio.h \
+    src/cannode.h \
+    inc/iiobus.h
 
 OTHER_FILES += \
     src/vds/vdsframe.wth \

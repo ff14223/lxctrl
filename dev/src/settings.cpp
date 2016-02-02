@@ -48,10 +48,10 @@ Settings::Settings()
 }
 
 
+
 const Setting& Settings::get(const char *Name)
 {
-    const Setting& root = cfg->getRoot();
-    return root[Name];
+    return cfg->lookup(Name);
 }
 
 bool Settings::load(const char *FileName)

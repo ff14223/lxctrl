@@ -7,6 +7,8 @@
 #include <map>
 #include <string>
 
+#include <src/canio.h>
+
 typedef enum
 {
     NF_IN=0,
@@ -14,12 +16,16 @@ typedef enum
 
 class ioimage : public IIoImage
 {
+    CanIo *pCanIo;
     bool * m_DigitalSignal;     // Signals that get connected internal
 
     std::map<std::string, IDigitalSignal*> m_mapSignal;
     std::map<std::string, IDigitalSignal*> m_mapInternSignal;       // interne Signale (cfg intern )
     std::map<std::string, IDigitalSignal*> m_mapCanSignal;          // interne Signale (cfg intern )
     std::map<std::string, IDigitalSignal*> m_mapLokalSignal;       // interne Signale (cfg intern )
+
+    std::map<std::string, IDigitalSignal*> m_mapNodes;
+
     void MakeSignal(std::string SignalName, std::string SignalMap);
     void GenerateInternalSignals();
 public:
