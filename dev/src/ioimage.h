@@ -8,6 +8,10 @@
 #include <string>
 
 #include <src/canio.h>
+#include <vector>
+
+using namespace std;
+
 
 typedef enum
 {
@@ -16,7 +20,8 @@ typedef enum
 
 class ioimage : public IIoImage
 {
-    CanIo *pCanIo;
+    CanIo *m_pCanIo;
+    vector<CanNode> vCanIo;
     bool * m_DigitalSignal;     // Signals that get connected internal
 
     std::map<std::string, IDigitalSignal*> m_mapSignal;

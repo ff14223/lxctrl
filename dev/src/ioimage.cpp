@@ -26,12 +26,12 @@ public:
 
 void ioimage::UpdateInputs()
 {
-    pCanIo->Test();
+    m_pCanIo->Input();
 }
 
 void ioimage::UpdateOutputs()
 {
-    
+    m_pCanIo->Output();
 }
 
 IIoImage* getIOImage()
@@ -44,10 +44,15 @@ IIoImage* getIOImage()
 
 ioimage::ioimage()
 {
-    pCanIo = new CanIo();
+    m_pCanIo = new CanIo();
+
+    m_pCanIo->GenerateSignals( &m_mapSignal );
 
     GenerateInternalSignals();      // internal Signals
 
+    /*
+     * Load signals from settings
+    */
     const Setting &s = getSettings()->get("SIGNAL");
     int count = s.getLength();
     cout << "Lade " << count << " Signale..." << endl;
@@ -75,7 +80,7 @@ void ioimage::GenerateInternalSignals()
 
         sprintf(text,"intern.sig[%d]",i);
         std::string SignalName = text;
-        m_mapInternSignal[SignalName] = (IDigitalSignal*)d;
+        m_mapSignal[SignalName] = (IDigitalSignal*)d;
     }
 }
 
@@ -96,11 +101,7 @@ void ioimage::MakeSignal(std::string SignalName, std::string SignalMap)
 {
     cout << "+ " << SignalName << "  "  << SignalMap << endl;
 
-    IDigitalSignal *d = 0;
-    if( SignalMap.find_first_of("intern.") == 0 )
-        d = m_mapInternSignal[SignalMap];
-
-
+    IDigitalSignal *d = m_mapSignal[SignalMap];
     if( d == 0 )
     {
         SignalNotFound.setReason("Signal konnte nicht verbunden werden - " + SignalName + " nach " + SignalMap);

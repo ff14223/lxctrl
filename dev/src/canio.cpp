@@ -14,10 +14,58 @@
 #include <linux/can/raw.h>
 
 #include "settings.h"
-
+#include <errno.h>
 using namespace std;
 
 
+
+void CanIo::Input()
+{
+    struct can_frame frame={0};
+
+    if( Receive(&frame) == 0 )
+    {
+        cout << " Frame Received Id:" << frame.can_id;
+    }
+}
+
+void CanIo::Output()
+{
+
+}
+
+void CanIo::StateMachine(struct can_frame *frame)
+{
+    static int state =0;
+
+    switch( state )
+    {
+    case 0:     /* wait alive */
+        if( frame->can_id = m_IdCmdResp)
+            state = 2;
+        else
+        {
+            frame->can_id = m_IdCmdReq;
+            Send( frame );
+        }
+        break;
+
+    case 1:
+        break;
+    }
+
+}
+
+
+void CanIo::GenerateSignals(std::map<std::string, IDigitalSignal*> *map)
+{
+    std::vector<CanNode>::iterator it = m_Nodes.begin();
+
+    for( ; it != m_Nodes.end(); ++it)
+    {
+        it->GenerateSignals(map);
+    }
+}
 
 void CanIo::LoadSettings()
 {
@@ -41,15 +89,43 @@ void CanIo::LoadSettings()
           signal.lookupValue("name", Name);
 
           cout << "    adding can node " << iNodeNr << " as " << Name << endl;
+          const CanNode *node = new CanNode( iNodeNr, Name );
+          m_Nodes.push_back( *node );
     }
 }
 
-int CanIo::Test()
+int CanIo::Send(struct can_frame *frame)
 {
-    struct can_frame frame;
+        int ret;
+        bool verbose=true;
+
+        while ((ret = send(m_Socket, frame, sizeof(*frame), 0))
+               != sizeof(*frame))
+        {
+            if (ret < 0) {
+                if (errno != ENOBUFS) {
+                    perror("send failed");
+                    return -1;
+                } else {
+                    if (verbose)
+                    {
+                        printf("N");
+                        fflush(stdout);
+                    }
+                }
+            } else {
+                fprintf(stderr, "send returned %d", ret);
+                return -1;
+            }
+        }
+        return 0;
+}
+
+int CanIo::Receive(struct can_frame *frame)
+{
     int ret;
-    ret = recv(m_Socket, &frame, sizeof(frame), 0);
-    if (ret != sizeof(frame))
+    ret = recv(m_Socket, frame, sizeof(*frame), 0);
+    if (ret != sizeof(*frame))
     {
         if (ret < 0)
             perror("recv failed");

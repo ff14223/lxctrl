@@ -2,6 +2,10 @@
 #define CANIO_H
 
 #include "src/cannode.h"
+#include <linux/can.h>
+#include <linux/can/raw.h>
+
+#include <vector>
 
 using namespace std;
 
@@ -9,10 +13,18 @@ class CanIo
 {
     int m_Socket;
     string m_strDevice;
+    vector<CanNode> m_Nodes;
+    int m_IdCmdReq, m_IdCmdResp, m_IdDi, mIdDo;
+
 public:
     CanIo();
+    void GenerateSignals(std::map<std::string, IDigitalSignal*> *map);
     void LoadSettings();
-    int Test();
+    int Receive(struct can_frame *frame);
+    int Send(struct can_frame *frame);
+    void Input();
+    void Output();
+    void StateMachine(struct can_frame *frame);
 };
 
 #endif // CANIO_H
