@@ -26,7 +26,7 @@ int getNodeNrCANId(int id)
         return id - 1566 + 1;
 
     if( id>=286 && id <(286+31*4) )
-        return (id-286) / 4;
+        return (id-286) / 4+1;
 
     if( id > 1630 && id < (1630+62) )
         return id - 1630 + 1;
