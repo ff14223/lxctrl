@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <unistd.h>
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -128,33 +129,11 @@ void CanIo::LoadSettings()
 
 int CanIo::Send(struct can_frame *frame)
 {
-        int ret;
-        bool verbose=true;
-
-        while ((ret = send(m_Socket, frame, sizeof(*frame), 0))
-               != sizeof(*frame))
+        /* send frame */
+        if( write( m_Socket, frame, 8) != 8)
         {
-            if (ret < 0)
-            {
-                if (errno != ENOBUFS)
-                {
-                    perror("send failed");
-                    return -1;
-                }
-                else
-                {
-                    if (verbose)
-                    {
-                        printf("N");
-                        fflush(stdout);
-                    }
-                }
-            }
-            else
-            {
-                fprintf(stderr, "send returned %d", ret);
-                return -1;
-            }
+             perror("write");
+             return 1;
         }
         m_pSystem->Counter.CanFramesSent++;
         return 0;
