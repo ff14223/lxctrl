@@ -9,6 +9,7 @@
 
 #include <src/canio.h>
 #include <vector>
+#include "inc/ISystemData.h"
 
 using namespace std;
 
@@ -20,21 +21,20 @@ typedef enum
 
 class ioimage : public IIoImage
 {
+    ISystem *m_pSystem;
     CanIo *m_pCanIo;
     vector<CanNode> vCanIo;
     bool * m_DigitalSignal;     // Signals that get connected internal
 
     std::map<std::string, IDigitalSignal*> m_mapSignal;
-    std::map<std::string, IDigitalSignal*> m_mapInternSignal;       // interne Signale (cfg intern )
-    std::map<std::string, IDigitalSignal*> m_mapCanSignal;          // interne Signale (cfg intern )
-    std::map<std::string, IDigitalSignal*> m_mapLokalSignal;       // interne Signale (cfg intern )
+    std::map<std::string, IDigitalSignal*> m_mapActiveSignal;       // interne Signale (cfg intern )
 
     std::map<std::string, IDigitalSignal*> m_mapNodes;
 
     void MakeSignal(std::string SignalName, std::string SignalMap);
     void GenerateInternalSignals();
 public:
-    ioimage();
+    ioimage(ISystem *pSystem);
     IDigitalSignal* getSignal(const std::string SignalName);
     void UpdateInputs();
     void UpdateOutputs();

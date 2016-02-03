@@ -22,7 +22,7 @@
 ISystem System={0};
 
 /* Init functions are only callable from here */
-void init(ISystemData *pSystemData);
+void init(ISystem *pSystem);
 void init_signals(ISystemData *pSystemData, ISystemSignals *pSignals);
 void init_alarms(ISystem *pSystem);
 void RunTestsIfEnabled(vds *pVds);
@@ -62,10 +62,10 @@ typedef struct
 
 static LxThreadInfo MainThread;
 void* lxctrl_main(void*);
+
+
 void Start()
 {
-
-
     int hr =  pthread_attr_init( &(MainThread.attrib) );
     hr=pthread_attr_setinheritsched(&(MainThread.attrib), PTHREAD_EXPLICIT_SCHED);
 
@@ -78,8 +78,6 @@ void Start()
     }
 
     hr = pthread_setschedparam( MainThread.id, SCHED_RR, &(MainThread.sched_param) );
-
-
 }
 
 int main()
@@ -105,7 +103,7 @@ void* lxctrl_main(void*)
         // ----------------------------------------------------
         // INIT
         // ----------------------------------------------------
-        init( &(System.Data) );
+        init( &System );
         init_signals( &(System.Data), &(System.Signals));
         init_alarms( &System );
 
@@ -180,6 +178,7 @@ void* lxctrl_main(void*)
         {
             /* wait */
             nanosleep(&ts, NULL);
+            System.Counter.MainLoops++;
             /*
              * get time elapsed
              */
@@ -217,7 +216,7 @@ void* lxctrl_main(void*)
 
             // This realy takes time
             // Show
-            //printpage(&System);
+            printpage(&System);
 
 
             clock_gettime(CLOCK_REALTIME, &requestEnd);

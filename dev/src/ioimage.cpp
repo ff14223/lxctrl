@@ -34,17 +34,11 @@ void ioimage::UpdateOutputs()
     m_pCanIo->Output();
 }
 
-IIoImage* getIOImage()
-{
-    static ioimage* image=0;
-    if( image == 0 )
-        image = new ioimage();
-    return image;
-}
 
-ioimage::ioimage()
+ioimage::ioimage(ISystem *pSystem)
 {
-    m_pCanIo = new CanIo();
+    m_pSystem = pSystem;
+    m_pCanIo = new CanIo(pSystem);
 
     m_pCanIo->GenerateSignals( &m_mapSignal );
 
@@ -89,7 +83,7 @@ void ioimage::DumpSignals()
       char Text[255];
 
       typedef std::map<std::string, IDigitalSignal*>::iterator it_type;
-      for(it_type iterator = m_mapSignal.begin(); iterator != m_mapSignal.end(); iterator++)
+      for(it_type iterator = m_mapActiveSignal.begin(); iterator != m_mapActiveSignal.end(); iterator++)
       {
            bool state = iterator->second->get();
            sprintf(Text,"%s:%d",iterator->first.c_str(), state);
@@ -119,6 +113,10 @@ IDigitalSignal* ioimage::getSignal(const std::string SignalName)
         SignalNotFound.setReason( "ioimage::getSignal - Signal nicht gefunden '" + SignalName +"'");
         throw SignalNotFound;
     }
+
+    m_mapActiveSignal[SignalName] = d;
+
+    return d;
 }
 
 

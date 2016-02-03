@@ -15,6 +15,9 @@
 
 #include "settings.h"
 #include <errno.h>
+#include <fcntl.h>
+
+
 using namespace std;
 
 
@@ -102,22 +105,29 @@ int CanIo::Send(struct can_frame *frame)
         while ((ret = send(m_Socket, frame, sizeof(*frame), 0))
                != sizeof(*frame))
         {
-            if (ret < 0) {
-                if (errno != ENOBUFS) {
+            if (ret < 0)
+            {
+                if (errno != ENOBUFS)
+                {
                     perror("send failed");
                     return -1;
-                } else {
+                }
+                else
+                {
                     if (verbose)
                     {
                         printf("N");
                         fflush(stdout);
                     }
                 }
-            } else {
+            }
+            else
+            {
                 fprintf(stderr, "send returned %d", ret);
                 return -1;
             }
         }
+        m_pSystem->Counter.CanFramesSent++;
         return 0;
 }
 
@@ -133,12 +143,14 @@ int CanIo::Receive(struct can_frame *frame)
             fprintf(stderr, "recv returned %d", ret);
         return -1;
     }
+    m_pSystem->Counter.CanFramesReceived++;
     cout << " FRAME RECEIVED\n" << endl;
     return 0;
 }
 
-CanIo::CanIo()
+CanIo::CanIo(ISystem*pSystem)
 {
+    m_pSystem = pSystem;
     LoadSettings();
 
     char *intf_name="can0";
@@ -152,6 +164,8 @@ CanIo::CanIo()
         cout << "CAN could not create socket" << endl;
     }
 
+
+
     struct sockaddr_can addr;
     struct ifreq ifr;
     addr.can_family = AF_CAN;
@@ -164,7 +178,19 @@ CanIo::CanIo()
         perror("bind");
     }
 
+    /* we are the only master, so receive all packets */
+    struct can_filter filter;
+    filter.can_id = 0;
+    filter.can_mask = 0;
+    setsockopt( m_Socket, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter) );
+
+
+    fcntl(m_Socket, F_SETFL, O_NONBLOCK);
+
+
+
 }
+
 
 /*Objekt
 Berechnung

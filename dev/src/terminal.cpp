@@ -3,7 +3,6 @@
 
 void printsignals(ISystem *pSystem)
 {
-
     pSystem->Data.pIo->DumpSignals();
 }
 
@@ -13,7 +12,16 @@ void printpage(ISystem *pSystem)
     char Text[80];
     int t = pSystem->Values.tloop;
     int t1 = pSystem->Values.tSleep;
-    sprintf(Text, "LoopTime: %04dms (%02d%%)  Sleep was: %04dms", t, (t*100)/250, t1 );
+    sprintf(Text, "Loop  %08ld t: %04dms (%02d%%)  Sleep was: %04dms",
+            pSystem->Counter.MainLoops,
+            t, (t*100)/250, t1 );
     cout << Text << endl;
+
+
+    sprintf(Text, "CAN Frames received:%08ld sent:%08ld",
+            pSystem->Counter.CanFramesReceived,
+            pSystem->Counter.CanFramesSent);
+    cout << Text << endl;
+
     printsignals(pSystem);
 }

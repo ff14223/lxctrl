@@ -53,11 +53,20 @@ typedef struct
     unsigned long tSleep;       /* time between activations */
 }IValues;
 
+
+typedef struct
+{
+    unsigned long CanFramesReceived;
+    unsigned long CanFramesSent;
+    unsigned long MainLoops;
+}ICounter;
+
 typedef struct
 {
     ISystemData    Data;
     ISystemSignals Signals;
-    IValues          Values;
+    IValues        Values;
+    ICounter       Counter;
 }ISystem;
 
 

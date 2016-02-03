@@ -7,6 +7,8 @@
 
 #include <vector>
 
+#include "inc/ISystemData.h"
+
 using namespace std;
 
 class CanIo
@@ -15,9 +17,9 @@ class CanIo
     string m_strDevice;
     vector<CanNode> m_Nodes;
     int m_IdCmdReq, m_IdCmdResp, m_IdDi, mIdDo;
-
+    ISystem *m_pSystem;
 public:
-    CanIo();
+    CanIo(ISystem*pSystem);
     void GenerateSignals(std::map<std::string, IDigitalSignal*> *map);
     void LoadSettings();
     int Receive(struct can_frame *frame);
