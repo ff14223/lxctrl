@@ -54,6 +54,11 @@ void CanNode::getDoFrame(struct can_frame *frame)
         frame->data[i] = PackDigitialInputsByte(i*8);
 }
 
+void CanNode::getCmdFrame(struct can_frame *frame)
+{
+    frame->can_id = m_CanIdCmdReq;
+}
+
 int CanNode::getState()
 {
     return m_state;
@@ -63,12 +68,17 @@ void CanNode::StateMachine(struct can_frame *frame)
 {
     switch( m_state )
     {
-    case 0:     /* */
+    case 0:     /* Wait for CMD Response */
+        if( frame && frame->can_id == m_CanIdCmdResp )
+            m_state = 100;
+        break;
 
+    case 100:
+        /* extract DI */
         break;
 
     default:
-        m_state = 0;
+        m_state = 0;;
         break;
     }
 }

@@ -44,9 +44,9 @@ void CanIo::Input()
         int NodeNr = getNodeNrCANId( frame.can_id );
         if( NodeNr > 0)
         {
-            cout << " Frame Received Id:" << frame.can_id << endl;
-            /*CanNode *pNode = m_Nodes[NodeNr];
-            pNode->StateMachine( frame );*/
+            cout << " Frame Received Id:" << frame.can_id << " for Node " << NodeNr << endl;
+            CanNode *pNode = m_mapNodes[NodeNr];
+            pNode->StateMachine( &frame );
         }
 
         if( NodeNr == 0 )
@@ -56,7 +56,26 @@ void CanIo::Input()
 
 void CanIo::Output()
 {
+    struct can_frame frame={0};
+    int NodeState;
 
+    std::map<int,CanNode*>::iterator it = m_mapNodes.begin();
+    for( ; it != m_mapNodes.end(); ++it)
+    {
+        NodeState = it->second->getState();
+        switch( NodeState )
+        {
+        case 0:
+            it->second->getCmdFrame(&frame);
+            Send( &frame );
+            break;
+
+        case 100:   /* operating */
+            it->second->getDoFrame( &frame );
+            Send( &frame );
+            break;
+        }
+    }
 }
 
 void CanIo::StateMachine(struct can_frame *frame)

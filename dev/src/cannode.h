@@ -30,6 +30,8 @@ public:
     void StateMachine(struct can_frame *frame);
 
     void getDoFrame(struct can_frame *frame);
+    void getCmdFrame(struct can_frame *frame);
+
     int getState();
     void DumpInfo();
 };
