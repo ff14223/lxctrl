@@ -15,7 +15,8 @@ class CanIo
 {
     int m_Socket;
     string m_strDevice;
-    vector<CanNode> m_Nodes;
+    std::map<int, CanNode*> m_mapNodes;
+
     int m_IdCmdReq, m_IdCmdResp, m_IdDi, mIdDo;
     ISystem *m_pSystem;
 public:
@@ -27,6 +28,7 @@ public:
     void Input();
     void Output();
     void StateMachine(struct can_frame *frame);
+    void DumpInfo();
 };
 
 #endif // CANIO_H

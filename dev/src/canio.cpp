@@ -20,15 +20,29 @@
 
 using namespace std;
 
-
+int getNodeNrCANId(int id)
+{
+    if( id >= 1566 && id < 1566 + 62 )
+        return id - 1566 + 1;
+    return 0;
+}
 
 void CanIo::Input()
 {
     struct can_frame frame={0};
 
-    if( Receive(&frame) == 0 )
+    while( Receive(&frame) == 0 )
     {
         cout << " Frame Received Id:" << frame.can_id;
+        int NodeNr = getNodeNrCANId( frame.can_id );
+        if( NodeNr > 0)
+        {
+            /*CanNode *pNode = m_Nodes[NodeNr];
+            pNode->StateMachine( frame );*/
+        }
+
+        if( NodeNr == 0 )
+            cout << "CanId konnte keines Node zugeordnet werden CAN-ID:" << frame.can_id << endl;
     }
 }
 
@@ -39,35 +53,24 @@ void CanIo::Output()
 
 void CanIo::StateMachine(struct can_frame *frame)
 {
-    static int state =0;
 
-    switch( state )
-    {
-    case 0:     /* wait alive */
-        if( frame->can_id = m_IdCmdResp)
-            state = 2;
-        else
-        {
-            frame->can_id = m_IdCmdReq;
-            Send( frame );
-        }
-        break;
-
-    case 1:
-        break;
-    }
 
 }
 
+void CanIo::DumpInfo()
+{
+    cout << endl << "IO-IMAGE" << endl;
+    std::map<int,CanNode*>::iterator it = m_mapNodes.begin();
+    for( ; it != m_mapNodes.end(); ++it)
+        it->second->DumpInfo();
+}
 
 void CanIo::GenerateSignals(std::map<std::string, IDigitalSignal*> *map)
 {
-    std::vector<CanNode>::iterator it = m_Nodes.begin();
+    std::map<int,CanNode*>::iterator it = m_mapNodes.begin();
 
-    for( ; it != m_Nodes.end(); ++it)
-    {
-        it->GenerateSignals(map);
-    }
+    for( ; it != m_mapNodes.end(); ++it)
+        it->second->GenerateSignals(map);
 }
 
 void CanIo::LoadSettings()
@@ -92,8 +95,7 @@ void CanIo::LoadSettings()
           signal.lookupValue("name", Name);
 
           cout << "    adding can node " << iNodeNr << " as " << Name << endl;
-          const CanNode *node = new CanNode( iNodeNr, Name );
-          m_Nodes.push_back( *node );
+          m_mapNodes[iNodeNr] = new CanNode( iNodeNr, Name );;
     }
 }
 

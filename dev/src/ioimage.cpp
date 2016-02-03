@@ -82,6 +82,8 @@ void ioimage::DumpSignals()
 {
       char Text[255];
 
+      m_pCanIo->DumpInfo();
+
       typedef std::map<std::string, IDigitalSignal*>::iterator it_type;
       for(it_type iterator = m_mapActiveSignal.begin(); iterator != m_mapActiveSignal.end(); iterator++)
       {
@@ -89,6 +91,8 @@ void ioimage::DumpSignals()
            sprintf(Text,"%s:%d",iterator->first.c_str(), state);
            cout << Text << endl;
       }
+
+
 }
 
 void ioimage::MakeSignal(std::string SignalName, std::string SignalMap)
