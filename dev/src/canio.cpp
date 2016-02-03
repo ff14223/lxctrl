@@ -22,8 +22,15 @@ using namespace std;
 
 int getNodeNrCANId(int id)
 {
-    if( id >= 1566 && id < 1566 + 62 )
+    if( id >= 1566 && id < (1566 + 62) )
         return id - 1566 + 1;
+
+    if( id>=286 && id <(286+31*4) )
+        return (id-286) / 4;
+
+    if( id > 1630 && id < (1630+62) )
+        return id - 1630 + 1;
+
     return 0;
 }
 
@@ -33,16 +40,17 @@ void CanIo::Input()
 
     while( Receive(&frame) == 0 )
     {
-        cout << " Frame Received Id:" << frame.can_id;
+
         int NodeNr = getNodeNrCANId( frame.can_id );
         if( NodeNr > 0)
         {
+            cout << " Frame Received Id:" << frame.can_id << endl;
             /*CanNode *pNode = m_Nodes[NodeNr];
             pNode->StateMachine( frame );*/
         }
 
         if( NodeNr == 0 )
-            cout << "CanId konnte keines Node zugeordnet werden CAN-ID:" << frame.can_id << endl;
+            cout << "CanId konnte keiner Node zugeordnet werden CAN-ID:" << frame.can_id << endl;
     }
 }
 
@@ -139,14 +147,13 @@ int CanIo::Receive(struct can_frame *frame)
     ret = recv(m_Socket, frame, sizeof(*frame), 0);
     if (ret != sizeof(*frame))
     {
-        if (ret < 0)
+        /*if (ret < 0)
             perror("recv failed");
         else
-            fprintf(stderr, "recv returned %d", ret);
+            fprintf(stderr, "recv returned %d", ret);*/
         return -1;
     }
     m_pSystem->Counter.CanFramesReceived++;
-    cout << " FRAME RECEIVED\n" << endl;
     return 0;
 }
 
