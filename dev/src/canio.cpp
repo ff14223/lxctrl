@@ -129,8 +129,10 @@ void CanIo::LoadSettings()
 
 int CanIo::Send(struct can_frame *frame)
 {
+        int size = sizeof(*frame);
+
         /* send frame */
-        if( write( m_Socket, frame, 8) != 8)
+        if( write( m_Socket, frame, size ) != size)
         {
              perror("write");
              return 1;
