@@ -135,7 +135,7 @@ int CanIo::Send(struct can_frame *frame)
         int size = sizeof(*frame);
 
         /* send frame */
-        struct canfd_frame frame1;
+        struct canfd_frame frame1={0,0,0,0,0,{0}};
         frame1.can_id = frame->can_id;
         frame1.len = 8;
         memcpy( frame1.data, frame->data, 8);
@@ -177,19 +177,31 @@ CanIo::CanIo(ISystem*pSystem)
     printf("interface = %s, family = %d, type = %d, proto = %d\n",
            intf_name, family, type, proto);
 
-    if ((m_Socket = socket(family, type, proto)) < 0)
+    /* open socket */
+    if ((m_Socket  = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
     {
-        cout << "CAN could not create socket" << endl;
+        perror("socket");
     }
 
 
 
     struct sockaddr_can addr;
-    /* struct ifreq ifr;*/
-    addr.can_family = AF_CAN;
+
+
+    addr.can_family = PF_CAN;
+    addr.can_ifindex = 0; /* any can interface */
+
     /*memset(&ifr.ifr_name, 0, sizeof(ifr.ifr_name));
     strncpy(ifr.ifr_name, ptr, nbytes);*/
-    addr.can_ifindex = 0; /* any can interface */
+
+    struct ifreq ifr;
+    strcpy(ifr.ifr_name, m_strDevice.c_str() );
+    if( ioctl(m_Socket, SIOCGIFINDEX, &ifr) < 0)
+    {
+        perror("SIOCGIFINDEX");
+    }
+    addr.can_ifindex = ifr.ifr_ifindex;
+
 
     if( bind( m_Socket, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
