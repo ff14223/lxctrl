@@ -19,6 +19,14 @@
 #include <fcntl.h>
 #include <memory.h>
 
+
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+
+
+
 using namespace std;
 
 int getNodeNrCANId(int id)
@@ -37,7 +45,7 @@ int getNodeNrCANId(int id)
 
 void CanIo::Input()
 {
-    struct can_frame frame={0};
+    struct can_frame frame={0,0,{0}};
 
     while( Receive(&frame) == 0 )
     {
@@ -57,7 +65,7 @@ void CanIo::Input()
 
 void CanIo::Output()
 {
-    struct can_frame frame={0};
+    struct can_frame frame={0,0,{0}};
     int NodeState;
 
     std::map<int,CanNode*>::iterator it = m_mapNodes.begin();
@@ -79,11 +87,6 @@ void CanIo::Output()
     }
 }
 
-void CanIo::StateMachine(struct can_frame *frame)
-{
-
-
-}
 
 void CanIo::DumpInfo()
 {
@@ -134,6 +137,7 @@ int CanIo::Send(struct can_frame *frame)
         /* send frame */
         struct canfd_frame frame1;
         frame1.can_id = frame->can_id;
+        frame1.len = 8;
         memcpy( frame1.data, frame->data, 8);
 
         // toto repeat in case of error !!
@@ -167,7 +171,7 @@ CanIo::CanIo(ISystem*pSystem)
     m_pSystem = pSystem;
     LoadSettings();
 
-    char *intf_name="can0";
+    const char *intf_name="can0";
     int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
 
     printf("interface = %s, family = %d, type = %d, proto = %d\n",
@@ -181,7 +185,7 @@ CanIo::CanIo(ISystem*pSystem)
 
 
     struct sockaddr_can addr;
-    struct ifreq ifr;
+    /* struct ifreq ifr;*/
     addr.can_family = AF_CAN;
     /*memset(&ifr.ifr_name, 0, sizeof(ifr.ifr_name));
     strncpy(ifr.ifr_name, ptr, nbytes);*/

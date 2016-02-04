@@ -27,7 +27,6 @@ public:
     int Send(struct can_frame *frame);
     void Input();
     void Output();
-    void StateMachine(struct can_frame *frame);
     void DumpInfo();
 };
 
