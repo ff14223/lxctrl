@@ -37,7 +37,7 @@ int getNodeNrCANId(int id)
     if( id>=286 && id <(286+31*4) )
         return (id-286) / 4+1;
 
-    if( id > 1630 && id < (1630+62) )
+    if( id >= 1630 && id < (1630+62) )
         return id - 1630 + 1;
 
     return 0;
@@ -65,7 +65,7 @@ void CanIo::Input()
 
 void CanIo::Output()
 {
-    struct can_frame frame={0,0,{0}};
+    struct canfd_frame   frame={0,0,0,0,0,{0}};
     int NodeState;
 
     std::map<int,CanNode*>::iterator it = m_mapNodes.begin();
@@ -130,18 +130,13 @@ void CanIo::LoadSettings()
     }
 }
 
-int CanIo::Send(struct can_frame *frame)
+int CanIo::Send(struct canfd_frame  *frame)
 {
-        int size = sizeof(*frame);
+        frame->len = 4;
 
-        /* send frame */
-        struct canfd_frame frame1={0,0,0,0,0,{0}};
-        frame1.can_id = frame->can_id;
-        frame1.len = 8;
-        memcpy( frame1.data, frame->data, 8);
-
+        /* all frames do have the same size (8Byte) */
         // toto repeat in case of error !!
-        if( write( m_Socket, &frame1, sizeof(frame1) ) != size)
+        if( write( m_Socket, &frame, 16 ) != 16)
         {
              perror("write");
              return 1;

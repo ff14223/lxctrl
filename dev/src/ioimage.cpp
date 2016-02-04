@@ -6,6 +6,7 @@
 #include "iostream"
 
 #include "inc/IDigitalSignal.h"
+#include "inc/termcolor.h"
 
 using namespace  std;
 using namespace libconfig;
@@ -80,6 +81,10 @@ void ioimage::GenerateInternalSignals()
 
 void ioimage::DumpSignals()
 {
+      Color::Modifier red( Color::FG_RED );
+      Color::Modifier green( Color::FG_GREEN);
+      Color::Modifier def( Color::FG_DEFAULT);
+
       char Text[255];
 
       m_pCanIo->DumpInfo();
@@ -88,8 +93,12 @@ void ioimage::DumpSignals()
       for(it_type iterator = m_mapActiveSignal.begin(); iterator != m_mapActiveSignal.end(); iterator++)
       {
            bool state = iterator->second->get();
-           sprintf(Text,"%s:%d",iterator->first.c_str(), state);
-           cout << Text << endl;
+           sprintf(Text,"%18s: ",iterator->first.c_str(), state);
+           if( state == true )
+                cout << Text << red << state << def << endl;
+           else
+                cout << Text << green << state << def << endl;
+
       }
 
 

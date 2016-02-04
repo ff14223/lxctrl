@@ -24,7 +24,7 @@ public:
     void GenerateSignals(std::map<std::string, IDigitalSignal*> *map);
     void LoadSettings();
     int Receive(struct can_frame *frame);
-    int Send(struct can_frame *frame);
+    int Send(struct canfd_frame *frame);
     void Input();
     void Output();
     void DumpInfo();

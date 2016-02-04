@@ -59,7 +59,8 @@ HEADERS += \
     src/dbobject.h \
     src/canio.h \
     src/cannode.h \
-    inc/iiobus.h
+    inc/iiobus.h \
+    inc/termcolor.h
 
 OTHER_FILES += \
     src/vds/vdsframe.wth \

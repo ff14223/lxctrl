@@ -47,14 +47,14 @@ unsigned char CanNode::PackDigitialInputsByte( int start )
     return d;
 }
 
-void CanNode::getDoFrame(struct can_frame *frame)
+void CanNode::getDoFrame(struct canfd_frame *frame)
 {
     frame->can_id = m_CanIdDo;
     for(int i=0;i<8;i++)
         frame->data[i] = PackDigitialInputsByte(i*8);
 }
 
-void CanNode::getCmdFrame(struct can_frame *frame)
+void CanNode::getCmdFrame(struct canfd_frame *frame)
 {
     frame->can_id = m_CanIdCmdReq;
 }

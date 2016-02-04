@@ -20,7 +20,7 @@ class CanNode
     bool m_DigitalInput[64];     // Signals that get connected internal
     bool m_DigitalOutput[64];     // Signals that get connected internal
     int m_state;
-    int m_CanIdDi, m_CanIdDo, m_CanIdCmdReq, m_CanIdCmdResp;
+    canid_t m_CanIdDi, m_CanIdDo, m_CanIdCmdReq, m_CanIdCmdResp;
     unsigned char PackDigitialInputsByte( int start );
 public:
     CanNode(int NodeNr, string Name);
@@ -29,8 +29,8 @@ public:
     void GenerateSignals(std::map<std::string, IDigitalSignal*> *map);
     void StateMachine(struct can_frame *frame);
 
-    void getDoFrame(struct can_frame *frame);
-    void getCmdFrame(struct can_frame *frame);
+    void getDoFrame(struct canfd_frame   *frame);
+    void getCmdFrame(struct canfd_frame   *frame);
 
     int getState();
     void DumpInfo();

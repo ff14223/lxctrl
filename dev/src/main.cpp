@@ -216,7 +216,7 @@ void* lxctrl_main(void*)
 
             // This realy takes time
             // Show
-            //printpage(&System);
+            printpage(&System);
 
 
             clock_gettime(CLOCK_REALTIME, &requestEnd);
