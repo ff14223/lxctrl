@@ -17,7 +17,7 @@
 #include "settings.h"
 #include <errno.h>
 #include <fcntl.h>
-
+#include <memory.h>
 
 using namespace std;
 
@@ -132,7 +132,12 @@ int CanIo::Send(struct can_frame *frame)
         int size = sizeof(*frame);
 
         /* send frame */
-        if( write( m_Socket, frame, size ) != size)
+        struct canfd_frame frame1;
+        frame1.can_id = frame->can_id;
+        memcpy( frame1.data, frame->data, 8);
+
+        // toto repeat in case of error !!
+        if( write( m_Socket, &frame1, sizeof(frame1) ) != size)
         {
              perror("write");
              return 1;
