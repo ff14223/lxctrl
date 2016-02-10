@@ -47,15 +47,24 @@ void ioimage::UpdateOutputs()
     m_pCanIo->Output();
 }
 
+void ioimage::GenerateSignals()
+{
+    m_pCanIo->GenerateSignals( this );
+
+    GenerateInternalSignals();      // internal Signals
+    CheckSignals();
+}
+
 
 ioimage::ioimage(ISystem *pSystem)
 {
     m_pSystem = pSystem;
     m_pCanIo = new CanIo(pSystem);
 
-    m_pCanIo->GenerateSignals( &m_mapSignal );
 
-    GenerateInternalSignals();      // internal Signals
+
+
+    GenerateSignals();
 
     /*
      * Load signals from settings
@@ -70,6 +79,17 @@ ioimage::ioimage(ISystem *pSystem)
 
           signal.lookupValue("name", signalName );
           signal.lookupValue("map", signalMap);
+
+          /* Test if Signal Mapping allready used */
+          string value = m_mapMappingSignal[signalMap];
+          if( value.empty() ==false  )
+          {
+              SignalNotFound.setReason( "ioimage::Ausgang wird bereits verwendet '" + signalMap + "'"
+                                         + "von " + value);
+              throw SignalNotFound;
+          }
+          m_mapMappingSignal[signalMap] = signalName;
+
 
           MakeSignal(signalName, signalMap);
     }
@@ -87,6 +107,18 @@ ioimage::ioimage(ISystem *pSystem)
     }
 }
 
+void ioimage::AddSignal(string SignalName, IDigitalSignal *pSignal)
+{
+    IDigitalSignal *d = m_mapSignal[SignalName];
+    if( d != NULL )
+    {
+        SignalNotFound.setReason("Signal wird bereits verwendet- " + SignalName);
+        throw SignalNotFound;
+    }
+
+    m_mapSignal[SignalName] = pSignal;
+}
+
 void ioimage::GenerateInternalSignals()
 {
     int SignalCount = 99;
@@ -99,10 +131,13 @@ void ioimage::GenerateInternalSignals()
 
         sprintf(text,"intern.sig[%d]",i);
         std::string SignalName = text;
-        m_mapSignal[SignalName] = (IDigitalSignal*)d;
+        AddSignal(SignalName, d );
     }
 }
 
+void ioimage::CheckSignals()
+{
+}
 
 void ioimage::KeyPressed(char keyPressed)
 {
@@ -199,7 +234,16 @@ void ioimage::MakeSignal(std::string SignalName, std::string SignalMap)
 {
     cout << "+ " << SignalName << "  "  << SignalMap << endl;
 
-    IDigitalSignal *d = m_mapSignal[SignalMap];
+    IDigitalSignal *d;
+
+    d = m_mapSignal[SignalName];
+    if( d != NULL )
+    {
+        SignalNotFound.setReason("Signal wird bereits verwendet " + SignalName );
+        throw SignalNotFound;
+    }
+
+    d = m_mapSignal[SignalMap];
     if( d == 0 )
     {
         SignalNotFound.setReason("Signal konnte nicht verbunden werden - " + SignalName + " nach " + SignalMap);
@@ -208,6 +252,9 @@ void ioimage::MakeSignal(std::string SignalName, std::string SignalMap)
 
     m_mapSignal[SignalName] = d;
 }
+
+
+
 
 IDigitalSignal* ioimage::getSignal(const std::string SignalName)
 {
@@ -219,7 +266,6 @@ IDigitalSignal* ioimage::getSignal(const std::string SignalName)
     }
 
     m_mapActiveSignal[SignalName] = d;
-
     return d;
 }
 

@@ -4,13 +4,14 @@
 #include "stdio.h"
 
 #include "src/vds/digitalsignal.h"
+#include "src/ioimage.h"
 
 void CanNode::DumpInfo()
 {
     cout << "Node " << m_NodeNr << " State:" << m_state << "\r\n";
 }
 
-void CanNode::GenerateSignals(std::map<std::string, IDigitalSignal*> *map)
+void CanNode::GenerateSignals(ioimage*image)
 {
     char text[100];
 
@@ -21,7 +22,7 @@ void CanNode::GenerateSignals(std::map<std::string, IDigitalSignal*> *map)
 
         sprintf(text,"%s.di[%d]",m_Name.c_str(),i);
         std::string SignalName = text;
-        (*map)[SignalName] = (IDigitalSignal*)d;
+        image->AddSignal(SignalName, d);
     }
 
     for(int i = 0; i < 64; i++ )
@@ -30,7 +31,7 @@ void CanNode::GenerateSignals(std::map<std::string, IDigitalSignal*> *map)
 
         sprintf(text,"%s.do[%d]",m_Name.c_str(),i);
         std::string SignalName = text;
-        (*map)[SignalName] = (IDigitalSignal*)d;
+        image->AddSignal(SignalName, d);
     }
 }
 

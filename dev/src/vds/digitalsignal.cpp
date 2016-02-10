@@ -1,6 +1,18 @@
 #include "digitalsignal.h"
 
 
+void DigitalSignal::setIsUsed(bool value)
+{
+    m_IsUsed = value;
+
+}
+
+bool DigitalSignal::getIsUsed()
+{
+    return m_IsUsed;
+
+}
+
 void DigitalSignal::setSimulationMode(bool value)
 {
     m_SimulationValue = false;
@@ -22,7 +34,7 @@ DigitalSignal::DigitalSignal(bool *value)
 {
     m_Simulate = false;
     m_SimulationValue = false;
-
+    m_IsUsed = false;
     m_IoValue = value;
     this->set( false );
     updateOutput();

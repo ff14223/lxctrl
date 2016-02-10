@@ -99,12 +99,12 @@ void CanIo::DumpInfo()
         it->second->DumpInfo();
 }
 
-void CanIo::GenerateSignals(std::map<std::string, IDigitalSignal*> *map)
+void CanIo::GenerateSignals(ioimage*image)
 {
     std::map<int,CanNode*>::iterator it = m_mapNodes.begin();
 
     for( ; it != m_mapNodes.end(); ++it)
-        it->second->GenerateSignals(map);
+        it->second->GenerateSignals(image);
 }
 
 void CanIo::LoadSettings()

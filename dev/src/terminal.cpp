@@ -28,4 +28,10 @@ void printpage(ISystem *pSystem)
     cout << Text << "\r\n";
 
     printsignals(pSystem);
+
+
+    /* Some important values */
+
+    cout << "\r\n";
+    cout << "Press 'q' to close..." << "\r\n";
 }

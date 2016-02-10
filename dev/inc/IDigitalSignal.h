@@ -12,7 +12,8 @@ public:
     virtual void setSimulationMode(bool value)=0;
     virtual bool getSimulationMode()=0;
     virtual void setSimulationValue(bool value)=0;
-
+    virtual void setIsUsed(bool value)=0;
+    virtual bool getIsUsed()=0;
 };
 
 #endif // IDIGITALSIGNAL_H

@@ -28,13 +28,18 @@ class ioimage : public IIoImage
 
     bool * m_DigitalSignal;     // Signals that get connected internal
 
+    /* mapping von io <-> Signal und SignalName auf Signal */
     std::map<std::string, IDigitalSignal*> m_mapSignal;
+
+    /* liste mit akiven Signalen */
     std::map<std::string, IDigitalSignal*> m_mapActiveSignal;       // interne Signale (cfg intern )
     std::map<std::string, string> m_mapKeyToSignal;
+    std::map<std::string, string> m_mapMappingSignal;
 
     void MakeSignal(std::string SignalName, std::string SignalMap);
     void GenerateInternalSignals();
 public:
+    void AddSignal(string SignalName, IDigitalSignal *pSignal);
     ioimage(ISystem *pSystem);
     IDigitalSignal* getSignal(const std::string SignalName);
     void UpdateInputs();
@@ -42,6 +47,8 @@ public:
     void DumpSignals();
     void KeyPressed(char key);
     int getNrSimulationMappings();
+    void CheckSignals();
+    void GenerateSignals();
 };
 
 

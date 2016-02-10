@@ -12,6 +12,7 @@
 
 using namespace  std;
 
+class ioimage;
 
 class CanNode
 {
@@ -26,7 +27,7 @@ public:
     CanNode(int NodeNr, string Name);
     int getNodeNumber(){ return m_NodeNr; }
     bool * getDigitalInput(int index){ return &m_DigitalInput[index]; }
-    void GenerateSignals(std::map<std::string, IDigitalSignal*> *map);
+    void GenerateSignals(ioimage*image);
     void StateMachine(struct can_frame *frame);
 
     void getDoFrame(struct canfd_frame   *frame);

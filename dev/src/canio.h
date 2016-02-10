@@ -11,6 +11,8 @@
 
 using namespace std;
 
+class ioimage;
+
 class CanIo
 {
     int m_Socket;
@@ -21,7 +23,7 @@ class CanIo
     ISystem *m_pSystem;
 public:
     CanIo(ISystem*pSystem);
-    void GenerateSignals(std::map<std::string, IDigitalSignal*> *map);
+    void GenerateSignals( ioimage*image);
     void LoadSettings();
     int Receive(struct can_frame *frame);
     int Send(struct canfd_frame *frame);

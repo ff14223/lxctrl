@@ -169,7 +169,9 @@ void* lxctrl_main(void*)
         // ----------------------------------------------------
         fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
         if( fdBmaDevice == -1 )
+        {
             cout << "WARNING: No BMA Device set. (" << bmaDeviceName << ")"<< endl;
+        }
 
         if( fdBmaDevice > 0)
         {
@@ -301,8 +303,9 @@ void* lxctrl_main(void*)
         MakeSysLogEntry( (char*)e.what() );
     }
 
-    cout << endl << "Closing File Descriptors."  << endl ;
     printf("\e[?25h");
+    cout << endl << "Closing File Descriptors."  << endl ;
+
 
     if( fdBmaDevice > 0 )
         close( fdBmaDevice );
