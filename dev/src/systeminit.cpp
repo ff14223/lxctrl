@@ -17,12 +17,22 @@ void init(ISystem *pSystem)
 
 void init_signals(ISystemData *pSystemData, ISystemSignals *pSignals)
 {
+    char Text[128];
     IIoImage *pIo = pSystemData->pIo;
     pSignals->bma.pISDNBusStoerung = pIo->getSignal("ISDNBusStoerung");
     pSignals->warning.pBmaAkkuFehler = pIo->getSignal("BmaAkkuFehler");
     pSignals->warning.pBmzCom1Offline = pIo->getSignal("BmzComOneOffline");
     pSignals->alarm.pInRaiseAlarm = pIo->getSignal("inRaiseAlarm");
     pSignals->alarm.pInRaiseHausalarm = pIo->getSignal("inHausAlarm");
+
+    pSignals->genral.pInOvdUp = pIo->getSignal("inOvdUp");
+    pSignals->genral.pInOvdDown = pIo->getSignal("inOvdDown");
+
+    for(int i=0; i<NR_OVD;i++)
+    {
+        sprintf(Text, "outSigOvd%02d", i);
+        pSignals->genral.pOutSigOvd[i]= pIo->getSignal(Text);
+    }
 }
 
 

@@ -7,6 +7,8 @@
 #include "inc/IAlarm.h"
 
 
+#define NR_OVD 8
+
 typedef struct
 {
     IAlarm *pHausalarm;
@@ -37,13 +39,24 @@ typedef struct
 {
     IDigitalSignal *pInRaiseAlarm;
     IDigitalSignal *pInRaiseHausalarm;
+
+
 }sAlarm;
+
+typedef struct
+{
+    IDigitalSignal *pInOvdUp;
+    IDigitalSignal *pInOvdDown;
+
+    IDigitalSignal *pOutSigOvd[NR_OVD];
+}sGeneral;
 
 typedef struct
 {
     sSignalBMA bma;
     sAlarm  alarm;
     sWarning   warning;
+    sGeneral genral;
 }ISystemSignals;
 
 
@@ -51,6 +64,7 @@ typedef struct
 {
     unsigned long tloop;
     unsigned long tSleep;       /* time between activations */
+    unsigned int uiCurrentOvdIndex;
 }IValues;
 
 
@@ -59,6 +73,7 @@ typedef struct
     unsigned long CanFramesReceived;
     unsigned long CanFramesSent;
     unsigned long MainLoops;
+    unsigned long BmzBytesReceived;
 }ICounter;
 
 typedef struct

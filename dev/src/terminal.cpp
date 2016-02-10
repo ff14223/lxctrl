@@ -15,13 +15,17 @@ void printpage(ISystem *pSystem)
     sprintf(Text, "Loop  %08ld t: %04dms (%02d%%)  Sleep was: %04dms",
             pSystem->Counter.MainLoops,
             t, (t*100)/250, t1 );
-    cout << Text << endl;
+    cout << Text << "\r\n";
 
 
     sprintf(Text, "CAN Frames received:%08ld sent:%08ld",
             pSystem->Counter.CanFramesReceived,
             pSystem->Counter.CanFramesSent);
-    cout << Text << endl;
+    cout << Text << "\r\n";
+
+    sprintf(Text, "BMZ %08ld bytes received",
+            pSystem->Counter.BmzBytesReceived);
+    cout << Text << "\r\n";
 
     printsignals(pSystem);
 }

@@ -55,7 +55,10 @@ void CanIo::Input()
         {
             cout << " Frame Received Id:" << frame.can_id << " for Node " << NodeNr << endl;
             CanNode *pNode = m_mapNodes[NodeNr];
-            pNode->StateMachine( &frame );
+            if( pNode )
+                pNode->StateMachine( &frame );
+            else
+                cout<<"No such node" << NodeNr << endl;
         }
 
         if( NodeNr == 0 )
@@ -90,7 +93,7 @@ void CanIo::Output()
 
 void CanIo::DumpInfo()
 {
-    cout << endl << "IO-IMAGE" << endl;
+    cout << endl << "IO-IMAGE" << "\r\n";
     std::map<int,CanNode*>::iterator it = m_mapNodes.begin();
     for( ; it != m_mapNodes.end(); ++it)
         it->second->DumpInfo();
@@ -136,11 +139,8 @@ int CanIo::Send(struct canfd_frame  *frame)
 
         /* all frames do have the same size (8Byte) */
         // toto repeat in case of error !!
-        if( write( m_Socket, &frame, 16 ) != 16)
-        {
-             perror("write");
+        if( write( m_Socket, frame, 16 ) != 16)
              return 1;
-        }
         m_pSystem->Counter.CanFramesSent++;
         return 0;
 }
@@ -211,9 +211,6 @@ CanIo::CanIo(ISystem*pSystem)
 
 
     fcntl(m_Socket, F_SETFL, O_NONBLOCK);
-
-
-
 }
 
 

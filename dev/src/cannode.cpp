@@ -7,7 +7,7 @@
 
 void CanNode::DumpInfo()
 {
-    cout << "Node " << m_NodeNr << " State:" << m_state << endl;
+    cout << "Node " << m_NodeNr << " State:" << m_state << "\r\n";
 }
 
 void CanNode::GenerateSignals(std::map<std::string, IDigitalSignal*> *map)

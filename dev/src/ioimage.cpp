@@ -24,14 +24,26 @@ public:
     virtual ~SignalNotFoundException() throw() { }
 } SignalNotFound;
 
+int ioimage::getNrSimulationMappings()
+{
+    return m_mapKeyToSignal.size();
+}
 
 void ioimage::UpdateInputs()
 {
+    typedef std::map<std::string, IDigitalSignal*>::iterator it_type;
+    for(it_type iterator = m_mapActiveSignal.begin(); iterator != m_mapActiveSignal.end(); iterator++)
+        iterator->second->updateInput();
+
     m_pCanIo->Input();
 }
 
 void ioimage::UpdateOutputs()
 {
+    typedef std::map<std::string, IDigitalSignal*>::iterator it_type;
+    for(it_type iterator = m_mapActiveSignal.begin(); iterator != m_mapActiveSignal.end(); iterator++)
+        iterator->second->updateOutput();
+
     m_pCanIo->Output();
 }
 
@@ -61,6 +73,18 @@ ioimage::ioimage(ISystem *pSystem)
 
           MakeSignal(signalName, signalMap);
     }
+
+    const Setting &s1 = getSettings()->get("SIMULATE");
+    count = s1.getLength();
+    cout << "Lade " << count << " SIMULATIONEN..." << endl;
+    for(int i = 0; i < count; ++i)
+    {
+          const Setting &signal = s1[i];
+          string signalName, signalKey;
+          signal.lookupValue("signal", signalName );
+          signal.lookupValue("key", signalKey);
+          m_mapKeyToSignal[signalKey] = signalName;
+    }
 }
 
 void ioimage::GenerateInternalSignals()
@@ -79,29 +103,96 @@ void ioimage::GenerateInternalSignals()
     }
 }
 
+
+void ioimage::KeyPressed(char keyPressed)
+{
+    char Text[]={0,0};
+    Text[0] = keyPressed;
+    std::string key=Text;
+    string SignalName = m_mapKeyToSignal[key];
+
+
+    IDigitalSignal *pSignal = m_mapSignal[SignalName];
+    if( pSignal )
+    {
+        if( pSignal->getSimulationMode() == true )
+            pSignal->setSimulationMode(false);
+        else
+            pSignal->setSimulationMode(true);
+    }
+
+    typedef std::map<std::string, string>::iterator it_type;
+
+    if( keyPressed == '1' )
+    {
+        for(it_type iterator = m_mapKeyToSignal.begin(); iterator != m_mapKeyToSignal.end(); iterator++)
+        {
+            IDigitalSignal *pSignal = m_mapSignal[iterator->second];
+            if( pSignal == NULL || pSignal->getSimulationMode() ==false)
+                continue;
+
+            pSignal->setSimulationValue( true );
+        }
+    }
+
+    if( keyPressed == '0')
+    {
+        for(it_type iterator = m_mapKeyToSignal.begin(); iterator != m_mapKeyToSignal.end(); iterator++)
+        {
+            IDigitalSignal *pSignal = m_mapSignal[iterator->second];
+            if( pSignal == NULL || pSignal->getSimulationMode() ==false)
+                continue;
+
+            pSignal->setSimulationValue( false );
+        }
+    }
+}
+
 void ioimage::DumpSignals()
 {
       Color::Modifier red( Color::FG_RED );
       Color::Modifier green( Color::FG_GREEN);
+      Color::Modifier simulation( Color::BG_BLUE);
       Color::Modifier def( Color::FG_DEFAULT);
+      Color::Modifier bg_def( Color::BG_DEFAULT);
 
       char Text[255];
 
       m_pCanIo->DumpInfo();
 
       typedef std::map<std::string, IDigitalSignal*>::iterator it_type;
+      int i=0;
       for(it_type iterator = m_mapActiveSignal.begin(); iterator != m_mapActiveSignal.end(); iterator++)
       {
            bool state = iterator->second->get();
            sprintf(Text,"%18s: ",iterator->first.c_str(), state);
+           if( iterator->second->getSimulationMode() == true )
+               cout << simulation;
+
+           cout << Text << bg_def;
+
            if( state == true )
-                cout << Text << red << state << def << endl;
+                cout << red << state << def;
            else
-                cout << Text << green << state << def << endl;
+                cout << green << state << def;
+           i++;
+           if( (i % 3) == 0  )
+               cout << "\r\n";
 
       }
 
+      cout << "\r\n";
+      i=0;
+      typedef std::map<std::string, string>::iterator it_type1;
 
+      for(it_type1 iterator = m_mapKeyToSignal.begin(); iterator != m_mapKeyToSignal.end(); iterator++)
+      {
+          sprintf(Text,"%1s=%12s: ",iterator->first.c_str(), iterator->second.c_str());
+          cout << Text ;
+
+          if( (i % 3) == 0  )
+              cout << "\r\n";
+      }
 }
 
 void ioimage::MakeSignal(std::string SignalName, std::string SignalMap)

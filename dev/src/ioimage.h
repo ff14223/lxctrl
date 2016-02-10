@@ -30,7 +30,7 @@ class ioimage : public IIoImage
 
     std::map<std::string, IDigitalSignal*> m_mapSignal;
     std::map<std::string, IDigitalSignal*> m_mapActiveSignal;       // interne Signale (cfg intern )
-
+    std::map<std::string, string> m_mapKeyToSignal;
 
     void MakeSignal(std::string SignalName, std::string SignalMap);
     void GenerateInternalSignals();
@@ -40,6 +40,8 @@ public:
     void UpdateInputs();
     void UpdateOutputs();
     void DumpSignals();
+    void KeyPressed(char key);
+    int getNrSimulationMappings();
 };
 
 
