@@ -70,5 +70,7 @@ OTHER_FILES += \
 DISTFILES += \
     how-to.txt \
     ../sound/track39.mp3 \
-    ../sound/test.wav
+    ../sound/test.wav \
+    ../sound/sample14.wav \
+    ../sound/test2.wav
 
