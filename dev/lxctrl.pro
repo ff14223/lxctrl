@@ -68,5 +68,6 @@ OTHER_FILES += \
     lxctrl.cfg
 
 DISTFILES += \
-    how-to.txt
+    how-to.txt \
+    ../sound/track39.mp3
 

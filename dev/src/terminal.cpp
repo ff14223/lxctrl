@@ -33,5 +33,5 @@ void printpage(ISystem *pSystem)
     /* Some important values */
 
     cout << "\r\n";
-    cout << "Press 'q' to close..." << "\r\n";
+    cout << "Keys:'1'/'0'' Simulation. 'q' to close..." << "\r\n";
 }
