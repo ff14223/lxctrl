@@ -392,6 +392,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
             else
             {
                 enFrameReceiveState = VDS_FRAME_WAIT_FOR_START;
+                pSystem->Counter.VdsFramesErrors++;
                 Redo = 1;   //  do not miss this char
             }
             break;
@@ -405,6 +406,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
             else
             {
                 enFrameReceiveState = VDS_FRAME_WAIT_FOR_START;
+                pSystem->Counter.VdsFramesErrors++;
                 Redo = 1;
             }
             break;
@@ -470,7 +472,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
                 /*
                 ** Ein Frame mehr empfangen
                 */
-                uiFramesReceived++;
+                pSystem->Counter.VdsFramesReceived++;
                 int offset=0;
                 unsigned char Data[258];
                 int count;

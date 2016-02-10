@@ -41,7 +41,6 @@ typedef struct
 class vds
 {
     enumFrameReceiveState enFrameReceiveState;
-    unsigned int uiFramesReceived;
     VdsFrame* pFrameReceive;
     IDatabase *pIDb;
     ISystemSignals *pSignals;

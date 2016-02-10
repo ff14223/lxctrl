@@ -74,6 +74,8 @@ typedef struct
     unsigned long CanFramesSent;
     unsigned long MainLoops;
     unsigned long BmzBytesReceived;
+    unsigned long VdsFramesReceived;
+    unsigned long VdsFramesErrors;
 }ICounter;
 
 typedef struct

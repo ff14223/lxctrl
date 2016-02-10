@@ -23,8 +23,14 @@ void printpage(ISystem *pSystem)
             pSystem->Counter.CanFramesSent);
     cout << Text << "\r\n";
 
+
     sprintf(Text, "BMZ %08ld bytes received",
             pSystem->Counter.BmzBytesReceived);
+    cout << Text << "\r\n";
+
+    sprintf(Text, "VdS Frames received:%08ld errors:%08ld",
+            pSystem->Counter.VdsFramesReceived,
+            pSystem->Counter.VdsFramesErrors);
     cout << Text << "\r\n";
 
     printsignals(pSystem);
