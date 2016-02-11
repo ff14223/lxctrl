@@ -133,14 +133,18 @@ int getch()
     }
 }
 
+#include <stdio.h>
+#include <errno.h>
+#include <QSerialPort>
+
 void* lxctrl_main(void*)
 {
 
+    QSerialPort *serialport;
     cout << "Linux Ctrl" << endl;
 
     signal(SIGINT, sig_handler);
 
-    int fdBmaDevice=-1;
     int fdBmaLogFile=-1;
 
     try
@@ -153,6 +157,12 @@ void* lxctrl_main(void*)
         init_signals( &(System.Data), &(System.Signals));
         init_alarms( &System );
 
+        serialport = new QSerialPort();
+        serialport->setBaudRate( QSerialPort::Baud1200 );
+        serialport->setDataBits( QSerialPort::Data8 );
+        serialport->setStopBits( QSerialPort::OneStop );
+        serialport->setFlowControl( QSerialPort::NoFlowControl );
+
         if( System.Data.pIo->getNrSimulationMappings() > 0 )
             set_conio_terminal_mode();
 
@@ -162,40 +172,19 @@ void* lxctrl_main(void*)
 
         vds *vds1 = new vds( System.Data.pIDb, &(System.Signals), &System);
 
-
-        // ----------------------------------------------------
-        // open serial device for BMZ Connection
-        // TODO Move to seperate file
-        // ----------------------------------------------------
-        fdBmaDevice = open( bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
-        if( fdBmaDevice == -1 )
+        serialport->setPortName( QString::fromStdString( bmaDeviceName ) );
+        if( serialport->open( QIODevice::ReadWrite) == false )
         {
             cout << "WARNING: No BMA Device set. (" << bmaDeviceName << ")"<< endl;
         }
 
-        if( fdBmaDevice > 0)
-        {
-            cout << "Configuring serial device for 8N1 9600" << endl;
-            struct termios options;
-
-            tcgetattr(fdBmaDevice, &options);        // get current optionys
-
-            cfsetispeed(&options, B9600);   // SET 9600 BAUD
-            cfsetospeed(&options, B9600);
-
-            options.c_cflag |= (CLOCAL | CREAD);
-            options.c_cflag &= ~PARENB;
-            options.c_cflag &= ~CSTOPB;
-            options.c_cflag &= ~CSIZE;
-            options.c_cflag |= CS8;
-
-            // options.c_cflag &= ~CN_RTSCTS;
-
-            tcsetattr(fdBmaDevice, TCSANOW, &options);
-        }
         fdBmaLogFile = open( bmaLogFileName.c_str() ,  O_RDWR | O_CREAT);
         if( fdBmaLogFile  < 0 )
+        {
             cout << "WARNING: Could not open log..." << endl;
+            printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
+            bTerminate = true;
+        }
 
 
         // ----------------------------------------------------
@@ -218,7 +207,7 @@ void* lxctrl_main(void*)
         struct timespec ts;
         ts.tv_sec = milliseconds / 1000;
         ts.tv_nsec = (milliseconds % 1000) * 1000000;
-        unsigned char data[128];
+        char data[128];
 
         //printf("\e[?25l");  //Cursor off
         struct timespec requestStart, requestEnd;
@@ -252,25 +241,22 @@ void* lxctrl_main(void*)
                     bTerminate = true;
             }
 
-            
-            // get char from serial port
-            int nrBytesRead = read( fdBmaDevice, data, sizeof(data));
-            if( nrBytesRead > 0)
+            if( serialport->bytesAvailable() > 0 )
             {
-                cout << ":" ;
-
-                // Dmp BMA Data
-                if( fdBmaLogFile  > 0 )
-                    write( fdBmaLogFile, data, nrBytesRead );
-
-                for(int i=0;i<nrBytesRead;i++)
+                int nrBytesRead  = serialport->read(data,sizeof(data) );
+                if( nrBytesRead > 0)
                 {
-                    vds1->ReceiveFrameStateMachine( data[i] );
-                    System.Counter.BmzBytesReceived++;
+                    // Dmp BMA Data
+                    if( fdBmaLogFile  > 0 )
+                        write( fdBmaLogFile, data, nrBytesRead );
+
+                    for(int i=0;i<nrBytesRead;i++)
+                    {
+                        vds1->ReceiveFrameStateMachine( data[i] );
+                        System.Counter.BmzBytesReceived++;
+                    }
                 }
-
             }
-
 
             // allgemeine Dinge
             ctrl_general( &System);
@@ -306,9 +292,8 @@ void* lxctrl_main(void*)
     printf("\e[?25h");
     cout << endl << "Closing File Descriptors."  << endl ;
 
+    serialport->close();
 
-    if( fdBmaDevice > 0 )
-        close( fdBmaDevice );
     if( fdBmaLogFile > 0)
         close( fdBmaLogFile);
 

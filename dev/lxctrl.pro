@@ -1,11 +1,18 @@
+QT += core serialport
+QT -= gui
+
+
 TEMPLATE = app
 CONFIG += console
 CONFIG -= app_bundle
-CONFIG -= qt
+
 CCFLAG += -std=c++11
 INCLUDEPATH += /usr/include/mysql
 QMAKE_CXXFLAGS += -pthread
 LIBS += -lconfig++ -lmysqlclient  -pthread
+
+TARGET = lxctrl
+
 
 SOURCES += src/settings.cpp \
     src/vds/vds.cpp \
@@ -31,7 +38,6 @@ SOURCES += src/settings.cpp \
 
 HEADERS += \
     src/settings.h \
-    vds.h \
     src/vds/vds.h \
     src/vds/vds2465.h \
     src/vds/vdsFrame.h \
