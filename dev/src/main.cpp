@@ -79,13 +79,17 @@ void Start()
 
     hr = pthread_setschedparam( MainThread.id, SCHED_RR, &(MainThread.sched_param) );
 }
+#include<QtCore/QCoreApplication>
 
-int main()
+int main(int argc, char *argv[])
 {
+    QCoreApplication coreApplication(argc, argv);
+
     Start();
 
     int *ret;
     pthread_join (MainThread.id, (void**) &ret);
+    return 0;
 }
 
 #include <sys/select.h>
@@ -135,7 +139,7 @@ int getch()
 
 #include <stdio.h>
 #include <errno.h>
-#include <QSerialPort>
+#include <QtSerialPort/QtSerialPort>
 
 void* lxctrl_main(void*)
 {
