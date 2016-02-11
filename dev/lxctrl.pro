@@ -72,5 +72,6 @@ DISTFILES += \
     ../sound/track39.mp3 \
     ../sound/test.wav \
     ../sound/sample14.wav \
-    ../sound/test2.wav
+    ../sound/test2.wav \
+    ../sound/000021 BMA Klipp.wav
 
