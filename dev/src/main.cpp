@@ -139,12 +139,14 @@ int getch()
 
 #include <stdio.h>
 #include <errno.h>
-#include <QtSerialPort/QtSerialPort>
+#include <QtSerialPort/QSerialPort>
+
+QT_USE_NAMESPACE
 
 void* lxctrl_main(void*)
 {
 
-    QSerialPort *serialport;
+    QSerialPort serialport;
     cout << "Linux Ctrl" << endl;
 
     signal(SIGINT, sig_handler);
@@ -161,11 +163,10 @@ void* lxctrl_main(void*)
         init_signals( &(System.Data), &(System.Signals));
         init_alarms( &System );
 
-        serialport = new QSerialPort();
-        serialport->setBaudRate( QSerialPort::Baud1200 );
-        serialport->setDataBits( QSerialPort::Data8 );
-        serialport->setStopBits( QSerialPort::OneStop );
-        serialport->setFlowControl( QSerialPort::NoFlowControl );
+        serialport.setBaudRate( QSerialPort::Baud1200 );
+        serialport.setDataBits( QSerialPort::Data8 );
+        serialport.setStopBits( QSerialPort::OneStop );
+        serialport.setFlowControl( QSerialPort::NoFlowControl );
 
         if( System.Data.pIo->getNrSimulationMappings() > 0 )
             set_conio_terminal_mode();
@@ -176,8 +177,8 @@ void* lxctrl_main(void*)
 
         vds *vds1 = new vds( System.Data.pIDb, &(System.Signals), &System);
 
-        serialport->setPortName( QString::fromStdString( bmaDeviceName ) );
-        if( serialport->open( QIODevice::ReadWrite) == false )
+        serialport.setPortName( QString::fromStdString( bmaDeviceName ) );
+        if( serialport.open( QIODevice::ReadWrite) == false )
         {
             cout << "WARNING: No BMA Device set. (" << bmaDeviceName << ")"<< endl;
         }
@@ -245,9 +246,9 @@ void* lxctrl_main(void*)
                     bTerminate = true;
             }
 
-            if( serialport->bytesAvailable() > 0 )
+            if( serialport.bytesAvailable() > 0 )
             {
-                int nrBytesRead  = serialport->read(data,sizeof(data) );
+                int nrBytesRead  = serialport.read(data,sizeof(data) );
                 if( nrBytesRead > 0)
                 {
                     // Dmp BMA Data
@@ -296,7 +297,7 @@ void* lxctrl_main(void*)
     printf("\e[?25h");
     cout << endl << "Closing File Descriptors."  << endl ;
 
-    serialport->close();
+    serialport.close();
 
     if( fdBmaLogFile > 0)
         close( fdBmaLogFile);

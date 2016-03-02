@@ -1,4 +1,7 @@
-QT += core serialport
+!mac:qtAddLibrary(QtSerialPort)
+
+
+QT += core
 QT -= gui
 
 
