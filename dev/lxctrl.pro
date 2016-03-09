@@ -37,7 +37,9 @@ SOURCES += src/settings.cpp \
     src/dbobject.cpp \
     src/terminal.cpp \
     src/canio.cpp \
-    src/cannode.cpp
+    src/cannode.cpp \
+    src/alarmstatemachine.cpp \
+    src/alarmoutput.cpp
 
 HEADERS += \
     src/settings.h \
@@ -69,7 +71,10 @@ HEADERS += \
     src/canio.h \
     src/cannode.h \
     inc/iiobus.h \
-    inc/termcolor.h
+    inc/termcolor.h \
+    src/alarmstatemachine.h \
+    src/alarmoutput.h \
+    inc/IAlarmOutput.h
 
 OTHER_FILES += \
     src/vds/vdsframe.wth \
