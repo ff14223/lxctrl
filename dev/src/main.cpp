@@ -180,7 +180,9 @@ void* lxctrl_main(void*)
         if( serialport->open( QIODevice::ReadWrite) == false )
         {
             cout << "WARNING: No BMA Device set. (" << bmaDeviceName << ")"<< endl;
+            bTerminate = true;
         }
+
 
         fdBmaLogFile = open( bmaLogFileName.c_str() ,  O_RDWR | O_CREAT);
         if( fdBmaLogFile  < 0 )
