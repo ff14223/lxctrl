@@ -19,3 +19,8 @@ void Alarm::raise()
     m_pSignal->set( true );
     m_pSystemData->pIDb->LogEntry( m_id, "Raise Alarm" );
 }
+
+void Alarm::AddOutput(IAlarmOutput* out)
+{
+    vAlarmOutputs.push_back( out );
+}
