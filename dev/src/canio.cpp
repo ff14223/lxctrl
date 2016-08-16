@@ -45,7 +45,7 @@ int getNodeNrCANId(int id)
 
 void CanIo::Input()
 {
-    struct can_frame frame={0,0,0,0,0,{0}};
+    struct can_frame frame;
 
     while( Receive(&frame) == 0 )
     {
@@ -68,7 +68,7 @@ void CanIo::Input()
 
 void CanIo::Output()
 {
-    struct canfd_frame   frame={0,0,0,0,0,{0}};
+    struct canfd_frame   frame;
     int NodeState;
 
     std::map<int,CanNode*>::iterator it = m_mapNodes.begin();
