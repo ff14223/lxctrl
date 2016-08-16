@@ -79,11 +79,9 @@ void Start()
 
     hr = pthread_setschedparam( MainThread.id, SCHED_RR, &(MainThread.sched_param) );
 }
-#include<QtCore/QCoreApplication>
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication coreApplication(argc, argv);
 
     //Start();
     lxctrl_main( argv );

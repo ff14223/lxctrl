@@ -1,5 +1,4 @@
 
-QT += core
 QT -= gui
 
 
