@@ -1,7 +1,10 @@
 #include "alarmoutput.h"
 
-AlarmOutput::AlarmOutput()
+AlarmOutput::AlarmOutput(int tOn, int tDelayOn, IDigitalSignal *pSignal)
 {
+    this->tDelayOn = tDelayOn;
+    this->tOn = tOn;
+    this->pSignal = pSignal;
     iState = 0;
 }
 
@@ -32,8 +35,11 @@ void AlarmOutput::StateMachine( int tElapsed )
             break;
 
         case 1: /* wait tOn */
-            if( t > 0 )
+            if( t > tElapsed )
+            {
+                /* continue waiting */
                 t -= tElapsed;
+            }
             else
             {
                 iState=2;
@@ -44,7 +50,7 @@ void AlarmOutput::StateMachine( int tElapsed )
             break;
 
         case 2:
-            if( t > 0 )
+            if( t > tElapsed )
                 t -= tElapsed;
             else
             {

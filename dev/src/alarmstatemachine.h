@@ -2,15 +2,25 @@
 #define ALARMSTATEMACHINE_H
 
 #include "inc/IAlarmOutput.h"
-#include <vector>
+#include "inc/IAlarm.h"
+#include "inc/ialarmstatemaschine.h"
 
-class AlarmStateMachine
+#include <map>
+#include "inc/ISystemData.h"
+
+class AlarmStateMachine : public IAlarmStateMachine
 {
-    std::vector<IAlarmOutput*> vAlarmOutputs;
+    ISystem *pSystem;
+    std::map<std::string, IAlarmOutput*> m_mapAlarmOutput; 
+    std::map<std::string, IAlarm*> m_mapAlarm;
+    
 public:
-    AlarmStateMachine();
+    AlarmStateMachine(ISystem *pSystem);
     void UpdateStates(int tEllapsed);
-    IAlarmOutput* getAlarmOutput();
+    IAlarmOutput* getAlarmOutput(std::string name);
+    IAlarm* getAlarm(string name);
+    IAlarm* loadAlarm(string name);
+    void LoadConfiguration();
 };
 
 #endif // ALARMSTATEMACHINE_H

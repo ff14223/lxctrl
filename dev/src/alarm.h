@@ -7,6 +7,7 @@
 #include "inc/IAlarmOutput.h"
 
 #include <vector>
+#include <string>
 
 class Alarm : public IAlarm
 {
@@ -15,9 +16,10 @@ class Alarm : public IAlarm
     ISystemData *m_pSystemData;
     vector<IAlarmOutput*> vAlarmOutputs;
 public:
-    Alarm(const char *Name, ISystemData *pISystem);
+    Alarm(std::string Name, ISystemData *pISystem);
     void AddOutput(IAlarmOutput* out);
     virtual void raise();
+    virtual void reset();
 };
 
 #endif // ALARM_H

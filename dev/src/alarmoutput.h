@@ -13,7 +13,7 @@ class AlarmOutput : public IAlarmOutput
     IDigitalSignal *pSignal;
 
 public:
-    AlarmOutput();
+    AlarmOutput(int tOn, int tDelayOn, IDigitalSignal *pSignal);
     void setSignalRaiseAlarm(IDigitalSignal *pSignal);
 
     virtual void StateMachine(int tEllapsed);

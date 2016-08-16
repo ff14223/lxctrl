@@ -3,6 +3,7 @@
 #include <src/ioimage.h>
 #include <src/mysqladapter.h>
 #include <src/alarm.h>
+#include <src/alarmstatemachine.h>
 
 void init(ISystem *pSystem)
 {
@@ -13,6 +14,7 @@ void init(ISystem *pSystem)
     pSystemData->pIDb = new MySqlAdapter( dbUser.c_str(), dbPwd.c_str() );
     // io image
     pSystemData->pIo = new ioimage(pSystem);
+    pSystemData->pAlarmStatemachine = new AlarmStateMachine(pSystem);
 }
 
 void init_signals(ISystemData *pSystemData, ISystemSignals *pSignals)
@@ -33,12 +35,15 @@ void init_signals(ISystemData *pSystemData, ISystemSignals *pSignals)
         sprintf(Text, "outSigOvd%02d", i);
         pSignals->genral.pOutSigOvd[i]= pIo->getSignal(Text);
     }
+
+    pSignals->test.pInTest = pIo->getSignal("inTest");
 }
 
 
 void init_alarms(ISystem *pSystem)
 {
-    pSystem->Data.alarm.pStoerung = new Alarm("Stoerungsalarm", &(pSystem->Data));
-    pSystem->Data.alarm.pRoutineMissing = new Alarm("FehlendeRoutine", &(pSystem->Data));
-    pSystem->Data.alarm.pHausalarm = new Alarm("Hausalarm", &(pSystem->Data));
+    IAlarmStateMachine *pAlSm = pSystem->Data.pAlarmStatemachine;
+    pSystem->Data.alarm.pStoerung = pAlSm->loadAlarm("Stoerungsalarm");
+    pSystem->Data.alarm.pRoutineMissing = pAlSm->loadAlarm("FehlendeRoutine");
+    pSystem->Data.alarm.pHausalarm = pAlSm->loadAlarm("Hausalarm");
 }

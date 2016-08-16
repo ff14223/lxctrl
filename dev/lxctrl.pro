@@ -1,5 +1,3 @@
-!mac:qtAddLibrary(QtSerialPort)
-
 
 QT += core
 QT -= gui
@@ -39,7 +37,8 @@ SOURCES += src/settings.cpp \
     src/canio.cpp \
     src/cannode.cpp \
     src/alarmstatemachine.cpp \
-    src/alarmoutput.cpp
+    src/alarmoutput.cpp \
+    src/rs232.c
 
 HEADERS += \
     src/settings.h \
@@ -74,7 +73,9 @@ HEADERS += \
     inc/termcolor.h \
     src/alarmstatemachine.h \
     src/alarmoutput.h \
-    inc/IAlarmOutput.h
+    inc/IAlarmOutput.h \
+    inc/ialarmstatemaschine.h \
+    src/rs232.h
 
 OTHER_FILES += \
     src/vds/vdsframe.wth \

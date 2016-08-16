@@ -31,13 +31,28 @@ void ctrl_ovd(ISystem*pSystem)
 
 }
 
+/*
+ *
+ *
+*/
 void ctrl_general(ISystem*pSystem)
 {
+    if( pSystem->Signals.test.pInTest->raised() )
+    {
+        pSystem->Data.alarm.pHausalarm->reset();
+        pSystem->Data.alarm.pHausalarm->raise();
+    }
+
+    /* ovd funktionalität */
     ctrl_ovd(pSystem);
 }
 
-
-void ctrl_alarm(ISystemData *pSystemData, ISystemSignals *pSignals)
+/*
+ *
+ *
+*/
+void ctrl_alarm(ISystem *pSystem)
 {
-
+    int t = pSystem->Values.tSleep; /* time between calls */
+    pSystem->Data.pAlarmStatemachine->UpdateStates( t );
 }

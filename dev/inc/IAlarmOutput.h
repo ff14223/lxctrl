@@ -4,7 +4,7 @@
 class IAlarmOutput
 {
 public:
-    virtual void StateMachine()=0;
+    virtual void StateMachine(int tEllapsed)=0;
     virtual void Raise()=0;
     virtual void Reset()=0;
 };

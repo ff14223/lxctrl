@@ -5,7 +5,7 @@
 #include "inc/IDigitalSignal.h"
 #include "inc/IIoImage.h"
 #include "inc/IAlarm.h"
-
+#include "inc/ialarmstatemaschine.h"
 
 #define NR_OVD 8
 
@@ -20,6 +20,7 @@ typedef struct
 {
     IIoImage *pIo;
     IDatabase *pIDb;
+    IAlarmStateMachine *pAlarmStatemachine;
     sAlarms alarm;
 }ISystemData;
 
@@ -53,10 +54,16 @@ typedef struct
 
 typedef struct
 {
+    IDigitalSignal *pInTest;
+}sTest;
+
+typedef struct
+{
     sSignalBMA bma;
     sAlarm  alarm;
     sWarning   warning;
     sGeneral genral;
+    sTest test;
 }ISystemSignals;
 
 

@@ -18,8 +18,8 @@
 #include <inc/ISystemData.h>
 #include <stdio.h>
 
-
-ISystem System={0};
+// globale daten
+ISystem System;
 
 /* Init functions are only callable from here */
 void init(ISystem *pSystem);
@@ -44,7 +44,7 @@ void sig_handler(int signum)
 }
 
 void ctrl_general(ISystem*pSystem);
-void ctrl_alarm(ISystemData *pSystemData, ISystemSignals *pSignals);
+void ctrl_alarm(ISystem *pSystem);
 void printpage(ISystem *pSystem);
 
 #define MAX_THREADS 1
@@ -85,7 +85,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication coreApplication(argc, argv);
 
-    Start();
+    //Start();
+    lxctrl_main( argv );
 
     int *ret;
     pthread_join (MainThread.id, (void**) &ret);
@@ -97,6 +98,61 @@ int main(int argc, char *argv[])
 #include <memory.h>
 
 struct termios orig_termios;
+
+
+int set_interface_attribs (int fd, int speed, int parity)
+{
+        struct termios tty;
+        memset (&tty, 0, sizeof tty);
+        if (tcgetattr (fd, &tty) != 0)
+                return -1;
+
+        cfsetospeed (&tty, speed);
+        cfsetispeed (&tty, speed);
+
+        tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;     // 8-bit chars
+        // disable IGNBRK for mismatched speed tests; otherwise receive break
+        // as \000 chars
+        tty.c_iflag &= ~IGNBRK;         // disable break processing
+        tty.c_lflag = 0;                // no signaling chars, no echo,
+                                        // no canonical processing
+        tty.c_oflag = 0;                // no remapping, no delays
+        tty.c_cc[VMIN]  = 0;            // read doesn't block
+        tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
+
+        tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+
+        tty.c_cflag |= (CLOCAL | CREAD);// ignore modem controls,
+                                        // enable reading
+        tty.c_cflag &= ~(PARENB | PARODD);      // shut off parity
+        tty.c_cflag |= parity;
+        tty.c_cflag &= ~CSTOPB;
+        tty.c_cflag &= ~CRTSCTS;
+
+        if (tcsetattr (fd, TCSANOW, &tty) != 0)
+                return -1;
+
+        return 0;
+}
+
+int set_blocking (int fd, int should_block)
+{
+        struct termios tty;
+        memset (&tty, 0, sizeof tty);
+        if (tcgetattr (fd, &tty) != 0)
+                return -1;
+
+        tty.c_cc[VMIN]  = should_block ? 1 : 0;
+        tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
+
+        if (tcsetattr (fd, TCSANOW, &tty) != 0)
+             return -1;
+
+        return 0;
+}
+
+
+
 
 void reset_terminal_mode()
 {
@@ -139,19 +195,16 @@ int getch()
 
 #include <stdio.h>
 #include <errno.h>
-#include <QtSerialPort/QSerialPort>
-
-QT_USE_NAMESPACE
 
 void* lxctrl_main(void*)
 {
 
-    QSerialPort serialport;
     cout << "Linux Ctrl" << endl;
 
     signal(SIGINT, sig_handler);
 
-    int fdBmaLogFile=-1;
+    int fdBmaSerialPort=-1;
+    int fdBmaLogFile =-1;
 
     try
     {
@@ -163,27 +216,24 @@ void* lxctrl_main(void*)
         init_signals( &(System.Data), &(System.Signals));
         init_alarms( &System );
 
-        serialport.setBaudRate( QSerialPort::Baud1200 );
-        serialport.setDataBits( QSerialPort::Data8 );
-        serialport.setStopBits( QSerialPort::OneStop );
-        serialport.setFlowControl( QSerialPort::NoFlowControl );
-
         if( System.Data.pIo->getNrSimulationMappings() > 0 )
             set_conio_terminal_mode();
-
 
         std::string bmaDeviceName = getSettings()->Cfg()->lookup("bma.device");
         std::string bmaLogFileName = getSettings()->Cfg()->lookup("bma.input-log");
 
         vds *vds1 = new vds( System.Data.pIDb, &(System.Signals), &System);
 
-        serialport.setPortName( QString::fromStdString( bmaDeviceName ) );
-        if( serialport.open( QIODevice::ReadWrite) == false )
+
+         fdBmaSerialPort = open (bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
+        if( fdBmaSerialPort < 0 )
         {
             cout << "WARNING: No BMA Device set. (" << bmaDeviceName << ")"<< endl;
             bTerminate = true;
         }
 
+        set_interface_attribs (fdBmaSerialPort, B1200, 0);  // set speed to 115,200 bps, 8n1 (no parity)
+        set_blocking (fdBmaSerialPort, 0);
 
         fdBmaLogFile = open( bmaLogFileName.c_str() ,  O_RDWR | O_CREAT);
         if( fdBmaLogFile  < 0 )
@@ -231,8 +281,12 @@ void* lxctrl_main(void*)
              * get time elapsed
              */
             clock_gettime(CLOCK_REALTIME, &requestStart);
-            System.Values.tSleep = ( requestStart.tv_sec - requestEnd.tv_sec ) * 1000
-              + ( requestStart.tv_nsec - requestEnd.tv_nsec ) / 1000 / 1000;
+            unsigned long t =  ( requestStart.tv_sec - requestEnd.tv_sec ) * 1000
+                    + ( requestStart.tv_nsec - requestEnd.tv_nsec ) / 1000 / 1000;
+            if( t > 1000000)
+                t = 1000000;
+
+            System.Values.tSleep = t;
 
             System.Data.pIo->UpdateInputs();
 
@@ -248,20 +302,17 @@ void* lxctrl_main(void*)
                     bTerminate = true;
             }
 
-            if( serialport.bytesAvailable() > 0 )
+            int nrBytesRead  = read( fdBmaSerialPort, data, sizeof(data) );
+            if( nrBytesRead > 0)
             {
-                int nrBytesRead  = serialport.read(data,sizeof(data) );
-                if( nrBytesRead > 0)
-                {
-                    // Dmp BMA Data
-                    if( fdBmaLogFile  > 0 )
-                        write( fdBmaLogFile, data, nrBytesRead );
+                // Dmp BMA Data
+                if( fdBmaLogFile  > 0 )
+                    write( fdBmaLogFile, data, nrBytesRead );
 
-                    for(int i=0;i<nrBytesRead;i++)
-                    {
-                        vds1->ReceiveFrameStateMachine( data[i] );
-                        System.Counter.BmzBytesReceived++;
-                    }
+                for(int i=0;i<nrBytesRead;i++)
+                {
+                    vds1->ReceiveFrameStateMachine( data[i] );
+                    System.Counter.BmzBytesReceived++;
                 }
             }
 
@@ -269,7 +320,7 @@ void* lxctrl_main(void*)
             ctrl_general( &System);
 
             // check for alarm
-            ctrl_alarm( &(System.Data), &(System.Signals));
+            ctrl_alarm( &(System));
 
             // handle state machines
             System.Data.pIo->UpdateOutputs();
@@ -298,8 +349,8 @@ void* lxctrl_main(void*)
 
     printf("\e[?25h");
     cout << endl << "Closing File Descriptors."  << endl ;
-
-    serialport.close();
+    if( fdBmaSerialPort > 0 )
+        close( fdBmaSerialPort );
 
     if( fdBmaLogFile > 0)
         close( fdBmaLogFile);

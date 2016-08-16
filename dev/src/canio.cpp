@@ -45,7 +45,7 @@ int getNodeNrCANId(int id)
 
 void CanIo::Input()
 {
-    struct can_frame frame={0,0,{0}};
+    struct can_frame frame={0,0,0,0,0,{0}};
 
     while( Receive(&frame) == 0 )
     {
