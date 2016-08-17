@@ -49,7 +49,7 @@ void MySqlAdapter::saveBmzUserStatus(IBmzUserStatus *pIUserStatus)
     }
 }
 
-IBmzUserStatus*MySqlAdapter::getBmzUserStatus(IBmzUser *pIUser)
+IBmzUserStatus* MySqlAdapter::getBmzUserStatus(IBmzUser *pIUser)
 {
     if( pIUser == NULL )
         return NULL;
@@ -66,7 +66,7 @@ IBmzUserStatus*MySqlAdapter::getBmzUserStatus(IBmzUser *pIUser)
     MYSQL_RES *result = mysql_store_result(CON);
     MYSQL_ROW row = mysql_fetch_row(result);
     if( row == NULL )
-        return NULL;
+        return status;
 
     int num_fields = mysql_num_fields(result);
 

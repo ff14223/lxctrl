@@ -115,8 +115,8 @@ int set_interface_attribs (int fd, int speed, int parity)
         tty.c_lflag = 0;                // no signaling chars, no echo,
                                         // no canonical processing
         tty.c_oflag = 0;                // no remapping, no delays
-        tty.c_cc[VMIN]  = 0;            // read doesn't block
-        tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
+        tty.c_cc[VMIN]  = 1;            // read doesn't block
+        tty.c_cc[VTIME] = 0;            // 0.5 seconds read timeout
 
         tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
 
@@ -193,9 +193,20 @@ int getch()
 
 #include <stdio.h>
 #include <errno.h>
+#include <sys/file.h>
+
+volatile int wait_flag=true;                    /* TRUE while no signal received */
+
+void signal_handler_IO (int status)
+{
+    printf("received SIGIO signal.\n");
+    wait_flag = false;
+}
+
 
 void* lxctrl_main(void*)
 {
+    struct sigaction saio={0};
 
     cout << "Linux Ctrl" << endl;
 
@@ -222,22 +233,41 @@ void* lxctrl_main(void*)
 
         vds *vds1 = new vds( System.Data.pIDb, &(System.Signals), &System);
 
+        /*
+         * Setup serial Port
+         * */
 
-         fdBmaSerialPort = open (bmaDeviceName.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
+
+        fdBmaSerialPort = open (bmaDeviceName.c_str(), O_RDWR | O_NOCTTY |  O_NONBLOCK);
         if( fdBmaSerialPort < 0 )
         {
             cout << "WARNING: No BMA Device set. (" << bmaDeviceName << ")"<< endl;
             bTerminate = true;
         }
 
+        /* install the signal handler before making the device asynchronous */
+
+        saio.sa_handler = signal_handler_IO;
+        sigaction(SIGIO,&saio,NULL);
+
+        fcntl(fdBmaSerialPort, F_SETOWN, getpid());          /* allow the process to receive SIGIO */
+        fcntl(fdBmaSerialPort, F_SETFL, FASYNC);
+
+        /* lock access so that another process can't also use the port */
+        if(flock(fdBmaSerialPort, LOCK_EX | LOCK_NB) != 0)
+        {
+          close(fdBmaSerialPort);
+          cout << "ERROR: Could not lock ComPort. (" << bmaDeviceName << ")"<< endl;
+          bTerminate = true;
+        }
+
         set_interface_attribs (fdBmaSerialPort, B1200, 0);  // set speed to 115,200 bps, 8n1 (no parity)
-        set_blocking (fdBmaSerialPort, 0);
+        //        set_blocking (fdBmaSerialPort, 0);
 
         fdBmaLogFile = open( bmaLogFileName.c_str() ,  O_RDWR | O_CREAT);
         if( fdBmaLogFile  < 0 )
         {
             cout << "WARNING: Could not open log..." << endl;
-            printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
             bTerminate = true;
         }
 
@@ -271,8 +301,8 @@ void* lxctrl_main(void*)
 
         while( bTerminate == false )
         {
-            /* wait */
-            nanosleep(&ts, NULL);
+
+            nanosleep(&ts, NULL);           /* wait */
             System.Counter.MainLoops++;
 
             /*
@@ -300,20 +330,24 @@ void* lxctrl_main(void*)
                     bTerminate = true;
             }
 
-            int nrBytesRead  = read( fdBmaSerialPort, data, sizeof(data) );
-            if( nrBytesRead > 0)
+            if( wait_flag == false)
             {
-                // Dmp BMA Data
-                if( fdBmaLogFile  > 0 )
-                    write( fdBmaLogFile, data, nrBytesRead );
-
-                for(int i=0;i<nrBytesRead;i++)
+                int nrBytesRead  = read( fdBmaSerialPort, data, sizeof(data) );
+                if( nrBytesRead > 0)
                 {
-                    vds1->ReceiveFrameStateMachine( data[i] );
-                    System.Counter.BmzBytesReceived++;
-                }
-            }
+                    // Dmp BMA Data
+                    if( fdBmaLogFile  > 0 )
+                        write( fdBmaLogFile, data, nrBytesRead );
 
+                    for(int i=0;i<nrBytesRead;i++)
+                    {
+                        vds1->ReceiveFrameStateMachine( data[i] );
+                        System.Counter.BmzBytesReceived++;
+                    }
+                }
+                else
+                    wait_flag = true;
+            }
             // allgemeine Dinge
             ctrl_general( &System);
 
@@ -333,6 +367,8 @@ void* lxctrl_main(void*)
             clock_gettime(CLOCK_REALTIME, &requestEnd);
             System.Values.tloop = ( requestEnd.tv_sec - requestStart.tv_sec ) * 1000
               + ( requestEnd.tv_nsec - requestStart.tv_nsec ) / 1000 / 1000;
+
+
 
 
 

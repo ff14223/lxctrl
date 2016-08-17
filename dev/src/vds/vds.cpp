@@ -238,18 +238,19 @@ void vds::VdsParse_NDAT_SYSTEMINTERNAL(unsigned char bLen, unsigned char*Data, T
             if( pUser )
             {
                 IBmzUserStatus * pStatus = pIDb->getBmzUserStatus( pUser );
-
-                int count = pStatus->getRoutineMissingCount();
-                if( count<= 0 )
+                if( pStatus )
                 {
-                    // erstes Auftreten
-                    snprintf(Text, 255, "Routine von Teilnehmer \"%s\" fehlt", pUser->getName().c_str() );
-                    pIDb->LogEntry( 203, Text);
-
+                    int count = pStatus->getRoutineMissingCount();
+                    if( count<= 0 )
+                    {
+                        // erstes Auftreten
+                        snprintf(Text, 255, "Routine von Teilnehmer \"%s\" fehlt", pUser->getName().c_str() );
+                        pIDb->LogEntry( 203, Text);
+                    }
+                    pStatus->setRoutineMissingCount(++count);
+                    pIDb->saveBmzUserStatus( pStatus );
+                    delete pStatus;
                 }
-                pStatus->setRoutineMissingCount(++count);
-                pIDb->saveBmzUserStatus( pStatus );
-                delete pStatus;
                 delete pUser;
             }
             else
