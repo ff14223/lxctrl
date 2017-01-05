@@ -12,7 +12,7 @@ class MySqlAdapter : public IDatabase
      void CreateTables();
 public:
      ~MySqlAdapter();
-    MySqlAdapter(const char *, const char* );
+    MySqlAdapter(const char *, const char *, const char* );
     void  LogEntry(int,const char *);
     IBmzUser* getBmzUser(long id);
     void saveBmzUserStatus(IBmzUserStatus *pIUserStatus);

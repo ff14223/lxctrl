@@ -2,6 +2,7 @@
 #define VDS_H
 
 #include "src/vdsframe.h"
+#include "inc/ivdsinput.h"
 
 typedef enum
 {
@@ -38,7 +39,7 @@ typedef struct
 #include "inc/interfaces.h"
 #include "inc/ISystemData.h"
 
-class vds
+class vds : public IVdsInput
 {
     enumFrameReceiveState enFrameReceiveState;
     VdsFrame* pFrameReceive;
@@ -46,6 +47,9 @@ class vds
     ISystemSignals *pSignals;
     ISystem *pSystem;
     TVDSUserData m_data;
+    int fdSerialport;
+    int iFramesreceived;
+    int iFrameerrors;
     int cbFrame(int Len, unsigned char *pData, unsigned int cooky);
     void VdsParse_NDAT_INTERN(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
     void VdsParse_NDAT_SLOTINFORMTION(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
@@ -54,11 +58,15 @@ class vds
     void VdsParse_NDAT_0x52(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
     void VdsParse_NDAT_UEGMSG(unsigned char bLen, unsigned char*Data, TVDSUserData *pUserData);
 public:
-    vds(IDatabase*pIDb, ISystemSignals *pSignals, ISystem *pSystem);
+    vds(IDatabase*pIDb, ISystemSignals *pSignals, ISystem *pSystem, int fd);
     void ReceiveFrameStateMachine(unsigned char Data);
     void SendAck();
 
+    void SendNorm();
     int ParseUserFrame(unsigned char *pFrameStart);
+
+    int getFrameReceiveCount(){return iFramesreceived;}
+    int getFrameErrorCount(){return iFrameerrors;}
 };
 
 

@@ -8,11 +8,16 @@
 void init(ISystem *pSystem)
 {
     ISystemData *pSystemData = &(pSystem->Data);
+    //
     // database connection
+    //
     std::string dbUser = getSettings()->Cfg()->lookup("db.user");
     std::string dbPwd = getSettings()->Cfg()->lookup("db.pwd");
-    pSystemData->pIDb = new MySqlAdapter( dbUser.c_str(), dbPwd.c_str() );
+    std::string dbSchema = getSettings()->Cfg()->lookup("db.schema");
+    pSystemData->pIDb = new MySqlAdapter( dbSchema.c_str(), dbUser.c_str(), dbPwd.c_str() );
+    //
     // io image
+    //
     pSystemData->pIo = new ioimage(pSystem);
     pSystemData->pAlarmStatemachine = new AlarmStateMachine(pSystem);
 }

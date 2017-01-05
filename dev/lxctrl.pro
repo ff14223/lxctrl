@@ -37,7 +37,10 @@ SOURCES += src/settings.cpp \
     src/cannode.cpp \
     src/alarmstatemachine.cpp \
     src/alarmoutput.cpp \
-    src/rs232.c
+    src/rs232.c \
+    src/deamon.cpp \
+    src/systeminit_bma.cpp \
+    src/skriptrunner.cpp
 
 HEADERS += \
     src/settings.h \
@@ -74,7 +77,10 @@ HEADERS += \
     src/alarmoutput.h \
     inc/IAlarmOutput.h \
     inc/ialarmstatemaschine.h \
-    src/rs232.h
+    src/rs232.h \
+    inc/ivdsinput.h \
+    src/skriptrunner.h \
+    inc/iscript.h
 
 OTHER_FILES += \
     src/vds/vdsframe.wth \

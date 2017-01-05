@@ -24,13 +24,17 @@ void printpage(ISystem *pSystem)
     cout << Text << "\r\n";
 
 
-    sprintf(Text, "BMZ %08ld bytes received",
-            pSystem->Counter.BmzBytesReceived);
+    sprintf(Text, "BMZ Main %08ld bytes received",
+            pSystem->BmaMain.Vds.BmzBytesReceived);
+    cout << Text << "\r\n";
+
+    sprintf(Text, "BMZ Failover %08ld bytes received",
+            pSystem->BmaFailover.Vds.BmzBytesReceived);
     cout << Text << "\r\n";
 
     sprintf(Text, "VdS Frames received:%08ld errors:%08ld",
-            pSystem->Counter.VdsFramesReceived,
-            pSystem->Counter.VdsFramesErrors);
+            pSystem->BmaMain.Vds.pVdsInput->getFrameReceiveCount(),
+            pSystem->BmaMain.Vds.pVdsInput->getFrameErrorCount());
     cout << Text << "\r\n";
 
     printsignals(pSystem);

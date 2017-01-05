@@ -6,6 +6,7 @@
 #include "inc/IIoImage.h"
 #include "inc/IAlarm.h"
 #include "inc/ialarmstatemaschine.h"
+#include "inc/ivdsinput.h"
 
 #define NR_OVD 8
 
@@ -80,10 +81,25 @@ typedef struct
     unsigned long CanFramesReceived;
     unsigned long CanFramesSent;
     unsigned long MainLoops;
-    unsigned long BmzBytesReceived;
+
     unsigned long VdsFramesReceived;
     unsigned long VdsFramesErrors;
 }ICounter;
+
+
+typedef struct
+{
+    IVdsInput *pVdsInput;
+    unsigned long BmzBytesReceived;
+}sVds;
+
+typedef struct
+{
+    int fd;
+    int fdLog;
+    volatile bool bDataAvailable;
+    sVds Vds;
+}sBma;
 
 typedef struct
 {
@@ -91,8 +107,12 @@ typedef struct
     ISystemSignals Signals;
     IValues        Values;
     ICounter       Counter;
+    sBma           BmaMain;
+    sBma           BmaFailover;
 }ISystem;
 
+
+ISystem* getSystem();   // from main
 
 
 #endif // ISYSTEMDATA_H

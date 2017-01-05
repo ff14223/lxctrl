@@ -1,18 +1,25 @@
 #include "vds.h"
 #include "iostream"
 #include "stdio.h"
+#include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
 
 using namespace std;
 
 
 
-vds::vds(IDatabase *pIDb, ISystemSignals *pSignals, ISystem *pSystem)
+vds::vds(IDatabase *pIDb, ISystemSignals *pSignals, ISystem *pSystem, int fd)
 {
     this->pIDb = pIDb;                                  // database interface
     this->pSignals = pSignals;
     this->pSystem = pSystem;
     pFrameReceive = new VdsFrame();
     enFrameReceiveState = VDS_FRAME_WAIT_FOR_START;
+    iFrameerrors = 0;
+    iFramesreceived = 0;
+    fdSerialport = fd;
 }
 
 #define VDS_FRAME_START 0x68
@@ -309,7 +316,7 @@ int vds::cbFrame(int Len, unsigned char *pData, unsigned int cooky)
 
     unsigned char nType = pData[0];
 
-
+    cout << "?: " <<  std::hex << " " << (int)nType << "  Len:" << Len << endl;
     switch( nType )
     {
         case NDAT_INTERN:
@@ -393,7 +400,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
             else
             {
                 enFrameReceiveState = VDS_FRAME_WAIT_FOR_START;
-                pSystem->Counter.VdsFramesErrors++;
+                iFrameerrors++;
                 Redo = 1;   //  do not miss this char
             }
             break;
@@ -407,7 +414,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
             else
             {
                 enFrameReceiveState = VDS_FRAME_WAIT_FOR_START;
-                pSystem->Counter.VdsFramesErrors++;
+                iFrameerrors++;
                 Redo = 1;
             }
             break;
@@ -438,7 +445,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
         case VDS_FRAME_GET_DATA:		/* Get Data */
             pFrameReceive->AddData(Data);
             uiCheckSum += Data;
-            /*cout << " Offset:" << pFrameReceive->Length()
+            /* cout << " Offset:" << pFrameReceive->Length()
                  << " uiCheckSum:" << uiCheckSum
                  << " pFrameReceive->Checksumm()" << (int)pFrameReceive->Checksumm() << endl;*/
             /* if( Data == uiCheckSum )
@@ -452,6 +459,14 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
 
 
         case VDS_FRAME_GET_CHECKSUM:		/* Get Checksum */
+            if( Data != pFrameReceive->Checksumm() )
+                cout << "Invalid Checksum  Data was:0x" << std::hex << (int) Data << "CSum:" << (int) pFrameReceive->Checksumm()  << endl;
+
+            Data = pFrameReceive->Checksumm();
+            /* Sonderbehandlung ungültige checksummen von ÜZ */
+            if( Data == 0x44 && pFrameReceive->Checksumm()== 0x41)
+                Data = pFrameReceive->Checksumm();
+
             if( Data == pFrameReceive->Checksumm() )
             {
                 enFrameReceiveState = VDS_FRAME_GET_FRAME_END;
@@ -461,7 +476,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
                 cout << "Invalid Checksum  Data was:0x" << std::hex << (int) Data << "CSum:" << (int) pFrameReceive->Checksumm()  << endl;
                 enFrameReceiveState = VDS_FRAME_WAIT_FOR_START;
                 enFrameReceiveState = VDS_FRAME_GET_FRAME_END;
-                Redo = 1;
+                Redo = 1; iFrameerrors++;
             }
             break;
 
@@ -477,7 +492,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
                 int offset=0;
                 unsigned char Data[258];
                 int count;
-
+                iFramesreceived++;
                 // Clear User Data
                 m_data.uiID=0;
                 while( (count=pFrameReceive->GetNDatFrame(&offset, Data)) > 0 )
@@ -486,6 +501,7 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
                         cout << std::hex << (int) Data[j] << " "; */
                     /* cout << endl; */
                     cbFrame(count, Data, 0);
+
                 }
                 //pFrameReceive->ForEachUserFrame(&vds::cbFrame, 0 );
                 SendAck( );
@@ -507,7 +523,16 @@ void vds::ReceiveFrameStateMachine(unsigned char Data)
 
 void vds::SendAck()
 {
+    char Data[]={0x68, 0x02, 0x02, 0x68, 0x00, 0x02, 0x02, 0x16};
+    write(fdSerialport, Data, sizeof(Data));
 }
+
+void vds::SendNorm()
+{
+    char Data[]={0x68, 0x02, 0x02, 0x68, 0x40, 0x02, 0x42, 0x16};
+    write(fdSerialport, Data, sizeof(Data));
+}
+
 
 int vds::ParseUserFrame(unsigned char *pFrameStart)
 {

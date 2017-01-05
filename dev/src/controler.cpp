@@ -1,7 +1,13 @@
 #include "inc/ISystemData.h"
 #include "inc/IIoImage.h"
 
+#include <sys/file.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
 
+#include <sys/ioctl.h>
 
 /*
  *  OVD Handling
@@ -47,12 +53,57 @@ void ctrl_general(ISystem*pSystem)
     ctrl_ovd(pSystem);
 }
 
+void ctrl_bma_device(sBma*pBma)
+{
+    char data[256];
+
+    if( pBma->bDataAvailable == false)
+        return;
+    pBma->bDataAvailable = false;
+
+    if( pBma->fd < 0 )
+        return;
+
+    int nrBytesRead = 0;
+
+    ioctl(pBma->fd, FIONREAD, &nrBytesRead);
+    if( nrBytesRead <= 0 )
+        return;
+
+    if( nrBytesRead > sizeof(data) )
+        nrBytesRead = sizeof(data);
+
+    nrBytesRead = read( pBma->fd, data, nrBytesRead );
+
+    // Dmp BMA Data
+    if( pBma->fdLog  > 0 )
+        write( pBma->fdLog, data,nrBytesRead );
+
+    for(int i=0;i<nrBytesRead;i++)
+    {
+        pBma->Vds.pVdsInput->ReceiveFrameStateMachine( data[i] );
+        pBma->Vds.BmzBytesReceived++;
+    }
+}
+
+
+void ctrl_bma(ISystem *pSystem)
+{
+    ctrl_bma_device( &(pSystem->BmaMain) );
+    ctrl_bma_device( &(pSystem->BmaFailover) );
+}
+
+
 /*
  *
  *
 */
 void ctrl_alarm(ISystem *pSystem)
 {
+    /* Check if inputs are pressed */
+
+
+    /* update AlarmStatemachine */
     int t = pSystem->Values.tSleep; /* time between calls */
     pSystem->Data.pAlarmStatemachine->UpdateStates( t );
 }

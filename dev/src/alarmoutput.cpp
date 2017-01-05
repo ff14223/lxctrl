@@ -15,6 +15,8 @@ void AlarmOutput::setSignalRaiseAlarm(IDigitalSignal *pSignal)
 
 void AlarmOutput::Raise()
 {
+    /* TODO: Check what to do if alarms outputs should be reraised? */
+    // if idel
     if( iState == 0 )
         iState = 1;
 }

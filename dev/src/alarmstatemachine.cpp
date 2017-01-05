@@ -42,7 +42,7 @@ void AlarmStateMachine::LoadConfiguration()
           signal.lookupValue("sigRaise", SignalName);
           signal.lookupValue("tOn", tOn );
           signal.lookupValue("tDelayOn", tDelayOn );
-          
+
           /* check values */
           if( tOn > 10000 || tDelayOn > 10000 )
           {
@@ -56,8 +56,6 @@ void AlarmStateMachine::LoadConfiguration()
 
           m_mapAlarmOutput[Name] = pOutput;
     }
-
-    
 }
 
 AlarmStateMachine::AlarmStateMachine(ISystem *pSystem)
@@ -84,6 +82,9 @@ IAlarm* AlarmStateMachine::loadAlarm(string name)
     IAlarm * pAlarm = m_mapAlarm[name];
     if( pAlarm != NULL )
         return pAlarm;
+
+
+    cout << "Lade Alarm " << name << endl;
 
     /* laden und speichern */
     pAlarm = (IAlarm*) new Alarm( name, &pSystem->Data);

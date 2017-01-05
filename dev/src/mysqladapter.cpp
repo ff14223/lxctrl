@@ -115,13 +115,13 @@ MySqlAdapter::~MySqlAdapter()
     mysql_close(CON);
 }
 
-MySqlAdapter::MySqlAdapter(const char *username, const char *pwd)
+MySqlAdapter::MySqlAdapter(const char * schema, const char *username, const char *pwd)
 {
     printf("MySql Client Version %s\n", mysql_get_client_info());
 
     dbConn = mysql_init(NULL);
 
-    if(mysql_real_connect( CON, "localhost", username, pwd, "lxctrl", 0, NULL, 0) == NULL)
+    if(mysql_real_connect( CON, "localhost", username, pwd, schema, 0, NULL, 0) == NULL)
     {
         printf("No connection to Database\n");
         finish_with_error(CON);
