@@ -118,7 +118,7 @@ void CanNode::InputStatemachine()
 void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 {
     struct canfd_frame oframe;
-
+    char Text[80];
     switch (m_o_state)
     {
         case 0:     /* request slave status */
@@ -150,7 +150,8 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
         case 3:
             if( frame != NULL && frame->can_id == m_CanIdCmdResp )
             {
-                cout << "ModuleType = " << std::hex << frame->data[0] << " " << frame->data[0] << "\r\n";
+                sprintf(Text, "  ModuleType: %02X %02X", frame->data[0], frame->data[1] );
+                cout << Text << "\r\n";
                 m_o_state = 2;
             }
             break;
