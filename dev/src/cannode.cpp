@@ -144,12 +144,13 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
                 m_o_state = 10;
             else
                 m_o_state = 3;
+            m_state_index++;
             break;
 
         case 3:
             if( frame != NULL && frame->can_id == m_CanIdCmdResp )
             {
-                cout << "ModuleType = " << frame->data[0] << " " << frame->data[0] << "\n\r";
+                cout << "ModuleType = " << std::hex << frame->data[0] << " " << frame->data[0] << "\r\n";
                 m_o_state = 2;
             }
             break;

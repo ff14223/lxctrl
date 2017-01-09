@@ -58,7 +58,7 @@ void CanIo::Input()
         int NodeNr = getNodeNrCANId( frame.can_id );
         if( NodeNr > 0)
         {
-            cout << " Frame Received Id:" << frame.can_id << " for Node " << NodeNr << endl;
+            cout << " Frame Received Id:" << frame.can_id << " for Node " << NodeNr << "\r\n";
             CanNode *pNode = m_mapNodes[NodeNr];
             if( pNode )
             {
@@ -66,10 +66,10 @@ void CanIo::Input()
                 pNode->SetUpdated( true );
             }
             else
-                cout<<"No such node" << NodeNr << endl;
+                cout<<"No such node" << NodeNr << "\r\n";
         }
         else
-            cout << "CanId konnte keiner Node zugeordnet werden CAN-ID:" << frame.can_id << endl << "\r";
+            cout << "CanId konnte keiner Node zugeordnet werden CAN-ID:" << frame.can_id << "\r\n";
     }
 }
 
