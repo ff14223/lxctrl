@@ -6,6 +6,10 @@
 using namespace std;
 using namespace libconfig;
 
+
+
+
+
 class Settings
 {
     Config *cfg;

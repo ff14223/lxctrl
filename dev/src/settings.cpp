@@ -3,19 +3,12 @@
 #include "exception"
 #include "string"
 #include <libconfig.h++>
+#include "settings.h"
 
 using namespace  std;
 using namespace libconfig;
 
 static Settings *s = NULL;
-
-Settings* getSettings()
-{
-    if( s == NULL )
-        s = new Settings();
-    return s;
-}
-
 
 class SettingNotFoundException : public exception
 {
@@ -29,6 +22,15 @@ public:
     void setReason(string reason){s1=reason;}
     virtual ~SettingNotFoundException() throw() { }
 } SettingNotFound;
+
+
+Settings* getSettings()
+{
+    if( s == NULL )
+        s = new Settings();
+    return s;
+}
+
 
 
 Config* Settings::Cfg()

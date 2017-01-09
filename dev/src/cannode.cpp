@@ -7,6 +7,19 @@
 #include "src/ioimage.h"
 #include "settings.h"
 
+class CanBusExceptionType : public exception
+{
+    string s1;
+    virtual const char* what() const throw()
+    {
+        // s1.append("Einstellungen konnten nicht geladen werden");
+        return s1.c_str();
+    }
+public:
+    void setReason(string reason){s1=reason;}
+    virtual ~CanBusExceptionType() throw() { }
+} CanBusException;
+
 unsigned char getModuleType(string ModuleName)
 {
     if( ModuleName.compare("DO721") == 0 ) return 0x08;
@@ -39,7 +52,10 @@ CanNode::CanNode(int NodeNr, string Name)
           unsigned char typecode = getModuleType(Type);
 
           if( typecode == 0x00 )
-              throw new SettingNotFoundException("Unbekannter Modultype in CAN Konfiguration");
+          {
+              CanBusException.setReason("Unbekannter Modultype in CAN Konfiguration");
+              throw CanBusException;
+          }
 
 
           cout << "    adding module " << Type << " at position " << i << endl;
