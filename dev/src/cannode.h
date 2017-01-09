@@ -34,6 +34,9 @@ class CanNode
     void UpdateDigitalInputs();
     void UpdateDigitalOutputs();
 
+    int m_ConfiguredModuleCount;
+    unsigned char m_ModuleTypes[8]; // Konfigurierte Module
+
 public:
     CanNode(int NodeNr, string Name);
     int getNodeNumber(){ return m_NodeNr; }

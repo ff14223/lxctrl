@@ -129,7 +129,7 @@ void CanIo::LoadSettings()
           signal.lookupValue("name", Name);
 
           cout << "    adding can node " << iNodeNr << " as " << Name << endl;
-          m_mapNodes[iNodeNr] = new CanNode( iNodeNr, Name );;
+          m_mapNodes[iNodeNr] = new CanNode( iNodeNr, Name );
     }
 }
 
