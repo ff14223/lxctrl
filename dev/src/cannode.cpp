@@ -119,6 +119,8 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 {
     struct canfd_frame oframe;
     char Text[80];
+    unsigned char p1,p2,d1,d2;
+
     switch (m_o_state)
     {
         case 0:     /* request slave status */
@@ -153,7 +155,17 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
         case 3:
             if( frame != NULL && frame->can_id == m_CanIdCmdResp )
             {
-                sprintf(Text, "  ModuleType: %02X %02X %02X %02X", frame->data[0], frame->data[1], frame->data[2], frame->data[3] );
+                p2 = frame->data[2];
+                if( p2 != 0 )
+                {
+                    sprintf(Text, "  Fehler: %02X %02X %02X %02X", frame->data[4], frame->data[5], frame->data[6], frame->data[7] );
+                }
+                else
+                {
+                    sprintf(Text, "  ModuleType: %02X %02X %02X %02X", frame->data[4], frame->data[5], frame->data[6], frame->data[7] );
+                }
+
+
                 cout << Text << "\r\n";
                 m_o_state = 2;
             }
