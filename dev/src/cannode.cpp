@@ -137,8 +137,11 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 
         case 2:
             getCmdFrame( &oframe );
-            oframe.data[0] = m_state_index;
-            oframe.data[1] = 0;
+
+            oframe.data[0] = 0;
+            oframe.data[1] = 1;
+            oframe.data[2] = m_state_index;
+
             pIO->Send(&oframe);
             if( m_state_index == 7 )
                 m_o_state = 10;
@@ -150,7 +153,7 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
         case 3:
             if( frame != NULL && frame->can_id == m_CanIdCmdResp )
             {
-                sprintf(Text, "  ModuleType: %02X %02X", frame->data[0], frame->data[1] );
+                sprintf(Text, "  ModuleType: %02X %02X %02X %02X", frame->data[0], frame->data[1], frame->data[2], frame->data[3] );
                 cout << Text << "\r\n";
                 m_o_state = 2;
             }
