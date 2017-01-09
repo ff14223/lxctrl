@@ -167,7 +167,7 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 
         case 2:
             oframe.data[0] = 2;
-            oframe.data[1] = 1;
+            oframe.data[1] = 0;
             oframe.data[2] = 0;
             pIO->Send(&oframe);
             m_o_state = 3;
