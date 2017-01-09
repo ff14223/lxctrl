@@ -9,32 +9,50 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
-
 using namespace  std;
 
 class ioimage;
+class CanIo;
 
 class CanNode
 {
     int m_NodeNr;
     string m_Name;
+    bool m_Updated;
+
     bool m_DigitalInput[64];     // Signals that get connected internal
     bool m_DigitalOutput[64];     // Signals that get connected internal
-    int m_state;
+
+    int m_state;           // Statemachine
+    int m_state_index;     // Statemachine Index
+
+    int m_o_state;           // Statemachine
+    int m_i_state;           // Statemachine
+
     canid_t m_CanIdDi, m_CanIdDo, m_CanIdCmdReq, m_CanIdCmdResp;
-    unsigned char PackDigitialInputsByte( int start );
+
+    void UpdateDigitalInputs();
+    void UpdateDigitalOutputs();
+
 public:
     CanNode(int NodeNr, string Name);
     int getNodeNumber(){ return m_NodeNr; }
     bool * getDigitalInput(int index){ return &m_DigitalInput[index]; }
     void GenerateSignals(ioimage*image);
-    void StateMachine(struct can_frame *frame);
+
+    void ReceiveFrame(struct can_frame *frame);
 
     void getDoFrame(struct canfd_frame   *frame);
     void getCmdFrame(struct canfd_frame   *frame);
 
     int getState();
     void DumpInfo();
+
+
+    void InputStatemachine();
+    void OuputStatemachine(CanIo *pIO, struct can_frame *frame);
+    void SetUpdated(bool value);
+    bool GetUpdated();
 };
 
 #endif // CANNODE_H
