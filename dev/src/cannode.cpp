@@ -7,6 +7,12 @@
 #include "src/ioimage.h"
 #include "settings.h"
 
+
+void BuilCanFrame(unsigned char * data, unsigned char id,unsigned char cmd,unsigned char p1,unsigned char p2)
+{
+    data[0] = id; data[1] = cmd; data[2] = p1; data[3] = p2;
+}
+
 class CanBusExceptionType : public exception
 {
     string s1;
@@ -42,7 +48,7 @@ CanNode::CanNode(int NodeNr, string Name)
 
     const Setting &s2 = getSettings()->get((Name + ".modules").c_str());
 
-    int m_ConfiguredModuleCount = s2.getLength();
+    m_ConfiguredModuleCount = s2.getLength();
     for(int i = 0; i < m_ConfiguredModuleCount; ++i)
     {
           const Setting &signal = s2[i];
@@ -142,7 +148,8 @@ void CanNode::InputStatemachine()
 {
 
 }
-
+#define CAN_CMD_GETSTATUS     0x00
+#define CAN_CMD_GET_MODULE_TYPE 0x01
 void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 {
     struct canfd_frame oframe;
@@ -152,32 +159,39 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
     switch (m_o_state)
     {
         case 0:     /* request slave status */
-            getCmdFrame( &oframe );
-            oframe.data[0] = 0;
-            oframe.data[1] = 0;
+            getCmdFrame(&oframe);
+            BuilCanFrame(oframe.data, 0,CAN_CMD_GETSTATUS, 0, 0);
             pIO->Send(&oframe);
+            m_o_state_count=0;
             m_o_state = 1;
-            m_state_index = 1;
             break;
 
         case 1:
+            if( m_o_state_count++ > 100 )
+                m_o_state = 0;
+
             if( frame != NULL && frame->can_id == m_CanIdCmdResp)
                 m_o_state = 2;
             break;
 
-        case 2:
-            oframe.data[0] = 2;
-            oframe.data[1] = 0;
-            oframe.data[2] = 0;
+        case 2:   // get module count p1 == 0
+            getCmdFrame( &oframe);
+            BuilCanFrame( oframe.data, 0, CAN_CMD_GET_MODULE_TYPE , 0, 0);
             pIO->Send(&oframe);
+            m_o_state_count = 0;
             m_o_state = 3;
             break;
 
         case 3:
+            m_state_index = 1;
+
+            if( m_o_state_count++ > 100 )
+                m_o_state = 0;
+
             if( frame != NULL && frame->can_id == m_CanIdCmdResp )
             {
                 // Anzahl der Module in
-                if( (m_ConfiguredModuleCount+1) != frame->data[4] )
+                if( (m_ConfiguredModuleCount+1) != frame->data[4])
                 {
                     cout << "    Modulanzahl stimmt nicht." << "\r\n";
                     m_o_state = 0;
@@ -194,18 +208,19 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
             if( m_state_index == m_ConfiguredModuleCount )
                 m_o_state = 10;
             else
-                m_o_state = 3;
+                m_o_state = 5;
 
             getCmdFrame( &oframe );
-
-            oframe.data[0] = 0;
-            oframe.data[1] = 1;
-            oframe.data[2] = m_state_index;
+            BuilCanFrame( oframe.data, 0, CAN_CMD_GET_MODULE_TYPE , m_state_index, 0);
             pIO->Send(&oframe);
             m_state_index++;
+            m_o_state_count = 0;
             break;
 
         case 5:
+            if( m_o_state_count++ > 100 )
+                m_o_state = 0;
+
             if( frame != NULL && frame->can_id == m_CanIdCmdResp )
             {
                 sprintf(Text, "  Fehler: %02X %02X %02X %02X", frame->data[4], frame->data[5], frame->data[6], frame->data[7] );

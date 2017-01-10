@@ -28,7 +28,7 @@ class CanNode
 
     int m_o_state;           // Statemachine
     int m_i_state;           // Statemachine
-
+    int m_o_state_count;
     canid_t m_CanIdDi, m_CanIdDo, m_CanIdCmdReq, m_CanIdCmdResp;
 
     void UpdateDigitalInputs();
