@@ -47,7 +47,10 @@ int getNodeNrCANId(int id)
 }
 
 
-/* Receive CAN Frame and Send to NodeNr */
+/* Receive CAN Frame
+ * translate CANID to Node Number
+ * Pass CAN Frame to Node
+ */
 void CanIo::Input()
 {
     struct can_frame frame;
@@ -62,7 +65,7 @@ void CanIo::Input()
             CanNode *pNode = m_mapNodes[NodeNr];
             if( pNode )
             {
-                pNode->OuputStatemachine(this, &frame );
+                pNode->Statemachine(this, &frame );
                 pNode->SetUpdated( true );
             }
             else
@@ -71,22 +74,27 @@ void CanIo::Input()
         else
             cout << "CanId konnte keiner Node zugeordnet werden CAN-ID:" << frame.can_id << "\r\n";
     }
-}
-
-void CanIo::Output()
-{
-    Input();
 
     std::map<int,CanNode*>::iterator it;
+
     /* call state machine for nodes width no frames received */
     for(it=m_mapNodes.begin(); it != m_mapNodes.end(); ++it)
     {
         if( it->second->GetUpdated() == false )
-        {
-            it->second->OuputStatemachine( this, NULL);
-        }
+            it->second->Statemachine(this, NULL );
 
+        it->second->UpdateDigitalInputs();
         it->second->SetUpdated(false);
+    }
+}
+
+void CanIo::Output()
+{
+    std::map<int,CanNode*>::iterator it;
+    /* call state machine for nodes width no frames received */
+    for(it=m_mapNodes.begin(); it != m_mapNodes.end(); ++it)
+    {
+        it->second->UpdateDigitalOutputs(this);
     }
 }
 

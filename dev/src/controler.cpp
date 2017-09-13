@@ -9,6 +9,16 @@
 
 #include <sys/ioctl.h>
 
+void ctrl_system_cycle_start(ISystem *pSystem )
+{
+    pSystem->Data.pIo->UpdateInputs();
+}
+
+void ctrl_system_cycle_end(ISystem *pSystem )
+{
+    pSystem->Data.pIo->UpdateOutputs();
+}
+
 /*
  *  OVD Handling
  *

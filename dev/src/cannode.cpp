@@ -8,7 +8,12 @@
 #include "settings.h"
 #include "stdint.h"
 
-void BuilCanFrame(unsigned char * data, unsigned char id,unsigned char cmd,unsigned char p1,unsigned char p2)
+
+#define CAN_CMD_GETSTATUS       0x00
+#define CAN_CMD_GET_MODULE_TYPE 0x01
+#define INFO(x) x;
+
+void BuildCmdCanFrame(unsigned char * data, unsigned char id,unsigned char cmd,unsigned char p1,unsigned char p2)
 {
     data[0] = id; data[1] = cmd; data[2] = p1; data[3] = p2;
 }
@@ -136,13 +141,22 @@ void CanNode::UpdateDigitalInputs()
 {
 }
 
-void CanNode::UpdateDigitalOutputs()
+void CanNode::UpdateDigitalOutputs(CanIo *pIO)
 {
+    struct canfd_frame oframe;
+
+    // only possible in o_state 10
+    if( m_o_state != 10 )
+        return;
+
+    getDoFrame( &oframe );
+    CopySignalsToImage( (uint64_t*) oframe.data);
+    pIO->Send(&oframe);
 }
 
 void CanNode::getDoFrame(struct canfd_frame *frame)
 {
-
+    frame->can_id = m_CanIdDo;
 }
 
 void CanNode::getCmdFrame(struct canfd_frame *frame)
@@ -155,32 +169,26 @@ int CanNode::getState()
     return m_state;
 }
 
-void CanNode::InputStatemachine()
-{
 
-}
-
-#define CAN_CMD_GETSTATUS       0x00
-#define CAN_CMD_GET_MODULE_TYPE 0x01
-void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
+void CanNode::Statemachine(CanIo *pIO,struct can_frame *frame)
 {
     struct canfd_frame oframe;
     char Text[80];
     unsigned char p1,p2,d1,d2;
 
-    cout << "State=" << m_o_state << "\r\n";
     switch (m_o_state)
     {
         case 0:     /* request slave status */
+            INFO(cout << "Request Slave Status\r\n")
             getCmdFrame(&oframe);
-            BuilCanFrame(oframe.data, 0,CAN_CMD_GETSTATUS, 0, 0);
+            BuildCmdCanFrame(oframe.data, 0,CAN_CMD_GETSTATUS, 0, 0);
             pIO->Send(&oframe);
             m_o_state_count=0;
             m_o_state = 1;
             break;
 
         case 1:
-            if( m_o_state_count++ > 100 )
+            if( m_o_state_count++ > 100 )   // timeout
                 m_o_state = 0;
 
             if( frame != NULL && frame->can_id == m_CanIdCmdResp)
@@ -189,7 +197,7 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 
         case 2:   // get module count p1 == 0
             getCmdFrame( &oframe);
-            BuilCanFrame( oframe.data, 0, CAN_CMD_GET_MODULE_TYPE , 0, 0);
+            BuildCmdCanFrame( oframe.data, 0, CAN_CMD_GET_MODULE_TYPE , 0, 0);
             pIO->Send(&oframe);
             m_o_state_count = 0;
             m_o_state = 3;
@@ -225,7 +233,7 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
                 m_o_state = 5;
 
                 getCmdFrame( &oframe );
-                BuilCanFrame( oframe.data, m_state_index, CAN_CMD_GET_MODULE_TYPE , m_state_index+1, 0);
+                BuildCmdCanFrame( oframe.data, m_state_index, CAN_CMD_GET_MODULE_TYPE , m_state_index+1, 0);
                 pIO->Send(&oframe);
                 m_state_index++;
             }
@@ -268,6 +276,17 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
     }
 }
 
+void CanNode::InputStatemachine()
+{
+
+}
+
+
+void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
+{
+
+}
+
 void CanNode::ReceiveFrame(struct can_frame *frame)
 {
     switch( m_state )
@@ -283,12 +302,12 @@ void CanNode::ReceiveFrame(struct can_frame *frame)
         /* Node is in running state. eg. receiving and sending IO */
     case 100:
         /* extract DI */
-        CopySignalsFromImage( (uint64_t*) (frame->data));
+        //CopySignalsFromImage( (uint64_t*) (frame->data));
         break;
 
     case 200:   /* enter error state */
         /* set io Off */
-        UpdateDigitalOutputs();
+        // UpdateDigitalOutputs();
         break;
 
     default:

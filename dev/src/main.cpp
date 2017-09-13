@@ -44,6 +44,9 @@ void sig_handler(int signum)
     bTerminate = true;
 }
 
+
+void ctrl_system_cycle_start(ISystem *pSystem );
+void ctrl_system_cycle_end(ISystem *pSystem );
 void ctrl_general(ISystem*pSystem);
 void ctrl_alarm(ISystem *pSystem);
 void ctrl_bma(ISystem *pSystem);
@@ -264,6 +267,7 @@ void* lxctrl_main(void*)
             }
 
 
+            ctrl_system_cycle_start( &System );
 
             // BMA
             ctrl_bma( &System );
@@ -274,9 +278,7 @@ void* lxctrl_main(void*)
             // check for alarm
             ctrl_alarm( &(System));
 
-            // handle state machines
-            System.Data.pIo->UpdateOutputs();
-
+            ctrl_system_cycle_end( &System );
 
 
             // This realy takes time
