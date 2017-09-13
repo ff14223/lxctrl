@@ -189,6 +189,14 @@ void CanNode::Statemachine(CanIo *pIO,struct can_frame *frame)
     char Text[80];
     unsigned char p1,p2,d1,d2;
 
+
+    if( frame != NULL)
+    {
+        // Fehler sind Frames mit Bit 7 = 1 oder 0xFF in der Kennung
+        if( frame->data[0] == 0xFF || (frame->data[0] & 0x80) == 0x80 )
+            m_o_state = 20;
+    }
+
     switch (m_o_state)
     {
         case 0:     /* request slave status */
@@ -228,7 +236,7 @@ void CanNode::Statemachine(CanIo *pIO,struct can_frame *frame)
                 if( (m_ConfiguredModuleCount+1) != frame->data[4])
                 {
                     cout << "    Modulanzahl stimmt nicht." << "\r\n";
-                    m_o_state = 0;
+                    m_o_state = 20;
                 }
                 else
                 {
@@ -283,6 +291,16 @@ void CanNode::Statemachine(CanIo *pIO,struct can_frame *frame)
             /* operating */
             break;
 
+        case 20:
+            cout << "in error state "<< endl;
+            if( frame != NULL )
+                for(int i; i<8;i++)
+                    cout<<" "<<frame->data[i];
+            m_o_state = 0;
+            break;
+
+        case 30:
+            break;
 
         default:
             break;

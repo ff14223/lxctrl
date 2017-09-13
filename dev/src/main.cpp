@@ -88,6 +88,7 @@ void Start()
 
 
 bool bDisplayStatus = false;
+bool bDisplayInfo =false;
 
 int main(int argc, char *argv[])
 {
@@ -95,6 +96,8 @@ int main(int argc, char *argv[])
     {
         if( strcmp(argv[i], "--status") == 0)
             bDisplayStatus=true;
+        else if(strcmp(argv[i],"--info") == 0 )
+            bDisplayInfo=true;
         else
         {
             cout << "Invalid Option " << argv[i] << endl;
@@ -283,7 +286,8 @@ void* lxctrl_main(void*)
 
             // This realy takes time
             // Show
-            printpage(&System);
+            if( bDisplayInfo == true && bDisplayStatus == true )
+                printpage(&System);
 
 
             clock_gettime(CLOCK_REALTIME, &requestEnd);
