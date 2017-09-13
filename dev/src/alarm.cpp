@@ -1,6 +1,4 @@
 #include "alarm.h"
-
-
 #include <src/settings.h>
 
 Alarm::Alarm(std::string Name, ISystemData *pISystemData)
