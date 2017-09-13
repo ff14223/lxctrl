@@ -98,10 +98,28 @@ void ctrl_bma(ISystem *pSystem)
  *
  *
 */
+bool bAlarmRaised=false;
+void ctrl_alarm_raise_from_key(ISystem *pSystem)
+{
+    if( bAlarmRaised == true )
+        return;
+
+    if( pSystem->Signals.alarm.pInRaiseHausalarm->get() == true )
+    {
+        pSystem->Data.alarm.pHausalarm->raise();
+        bAlarmRaised = true;
+    }
+
+    // Todo add more alarms
+}
+
 void ctrl_alarm(ISystem *pSystem)
 {
     /* Check if inputs are pressed */
-
+    if( pSystem->Signals.alarm.pInRaiseAlarm->get() == true )
+        ctrl_alarm_raise_from_key(pSystem);
+    else
+        bAlarmRaised = false;
 
     /* update AlarmStatemachine */
     int t = pSystem->Values.tSleep; /* time between calls */

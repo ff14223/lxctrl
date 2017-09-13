@@ -6,7 +6,7 @@
 #include "src/vds/digitalsignal.h"
 #include "src/ioimage.h"
 #include "settings.h"
-
+#include "stdint.h"
 
 void BuilCanFrame(unsigned char * data, unsigned char id,unsigned char cmd,unsigned char p1,unsigned char p2)
 {
@@ -103,31 +103,42 @@ void CanNode::GenerateSignals(ioimage*image)
     }
 }
 
-unsigned char PackDigitialSignalsInByte( bool *m_DigitalSignal, int start )
-{
-    unsigned char d=0;
 
-    for(int i=0;i<8;i++)
+void CanNode::CopySignalsToImage(uint64_t *p)
+{
+    uint64_t d=0;
+
+    for(int i=0;i<64;i++)
     {
-        if( m_DigitalSignal[i+start] == false)
+        if( m_DigitalInput[i] == false)
             continue;
         d |= (1<<i);
     }
-    return d;
+
+    *p = d;
 }
+
+
+void CanNode::CopySignalsFromImage(uint64_t *p)
+{
+
+    for(int i=0;i<64;i++)
+    {
+        if( (*p & (1<<i)) != 0 )
+            m_DigitalInput[i] = true;
+        else
+            m_DigitalInput[i] = false;
+    }
+}
+
 
 void CanNode::UpdateDigitalInputs()
 {
-    unsigned char d = PackDigitialSignalsInByte(m_DigitalInput,0);
-
 }
 
 void CanNode::UpdateDigitalOutputs()
 {
-    unsigned char d = PackDigitialSignalsInByte(m_DigitalOutput,0);
-
 }
-
 
 void CanNode::getDoFrame(struct canfd_frame *frame)
 {
@@ -148,7 +159,8 @@ void CanNode::InputStatemachine()
 {
 
 }
-#define CAN_CMD_GETSTATUS     0x00
+
+#define CAN_CMD_GETSTATUS       0x00
 #define CAN_CMD_GET_MODULE_TYPE 0x01
 void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 {
@@ -156,6 +168,7 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
     char Text[80];
     unsigned char p1,p2,d1,d2;
 
+    cout << "State=" << m_o_state << "\r\n";
     switch (m_o_state)
     {
         case 0:     /* request slave status */
@@ -183,7 +196,7 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
             break;
 
         case 3:
-            m_state_index = 1;
+            m_state_index = 0;
 
             if( m_o_state_count++ > 100 )
                 m_o_state = 0;
@@ -205,15 +218,17 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 
 
         case 4:
-            if( m_state_index == m_ConfiguredModuleCount )
+            if( m_state_index >= m_ConfiguredModuleCount )
                 m_o_state = 10;
             else
+            {
                 m_o_state = 5;
 
-            getCmdFrame( &oframe );
-            BuilCanFrame( oframe.data, 0, CAN_CMD_GET_MODULE_TYPE , m_state_index, 0);
-            pIO->Send(&oframe);
-            m_state_index++;
+                getCmdFrame( &oframe );
+                BuilCanFrame( oframe.data, m_state_index, CAN_CMD_GET_MODULE_TYPE , m_state_index+1, 0);
+                pIO->Send(&oframe);
+                m_state_index++;
+            }
             m_o_state_count = 0;
             break;
 
@@ -223,13 +238,28 @@ void CanNode::OuputStatemachine(CanIo *pIO,struct can_frame *frame)
 
             if( frame != NULL && frame->can_id == m_CanIdCmdResp )
             {
-                sprintf(Text, "  Fehler: %02X %02X %02X %02X", frame->data[4], frame->data[5], frame->data[6], frame->data[7] );
+                if( (frame->data[4] & 0x1F) != m_ModuleTypes[frame->data[0]])
+                {
+                    sprintf(Text, "  Fehler: %02X %02X %02X %02X", frame->data[4], frame->data[5], frame->data[6], frame->data[7] );
+                    cout << Text << "\r\n";
+                    m_o_state = 0;
+                }
             }
-            cout << Text << "\r\n";
             m_o_state = 4;
             break;
 
         case 10:
+            if( m_o_state_count++ > 100 )
+                m_o_state = 0;
+
+            if( frame != NULL && frame->can_id == m_CanIdDi)
+            {
+                /* */
+                m_o_state_count = 0;
+
+            }
+
+            /* operating */
             break;
 
 
@@ -248,10 +278,12 @@ void CanNode::ReceiveFrame(struct can_frame *frame)
         break;
 
     case 1:
+        break;
+
         /* Node is in running state. eg. receiving and sending IO */
     case 100:
         /* extract DI */
-        frame->data;
+        CopySignalsFromImage( (uint64_t*) (frame->data));
         break;
 
     case 200:   /* enter error state */

@@ -5,6 +5,8 @@
 #include <map>
 #include <string>
 #include "inc/IDigitalSignal.h"
+#include "stdint.h"
+
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -20,6 +22,9 @@ class CanNode
     string m_Name;
     bool m_Updated;
 
+    unsigned char io_image_in[8];   //
+    unsigned char io_image_out[8];
+
     bool m_DigitalInput[64];     // Signals that get connected internal
     bool m_DigitalOutput[64];     // Signals that get connected internal
 
@@ -33,6 +38,9 @@ class CanNode
 
     void UpdateDigitalInputs();
     void UpdateDigitalOutputs();
+
+    void CopySignalsToImage(uint64_t *p);
+    void CopySignalsFromImage(uint64_t *p);
 
     int m_ConfiguredModuleCount;
     unsigned char m_ModuleTypes[8]; // Konfigurierte Module
