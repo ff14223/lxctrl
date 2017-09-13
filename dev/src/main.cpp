@@ -283,7 +283,7 @@ void* lxctrl_main(void*)
 
             // This realy takes time
             // Show
-            //printpage(&System);
+            printpage(&System);
 
 
             clock_gettime(CLOCK_REALTIME, &requestEnd);
@@ -307,6 +307,8 @@ void* lxctrl_main(void*)
     cout << endl << "Closing File Descriptors."  << endl ;
     if( System.BmaMain.fd > 0 )
         close(System.BmaMain.fd);
+    if( System.BmaMain.fdLog > 0 )
+        close(System.BmaMain.fdLog);
 
     return 0;
 }

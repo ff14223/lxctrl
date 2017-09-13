@@ -185,6 +185,7 @@ void ioimage::KeyPressed(char keyPressed)
 
 void ioimage::DumpSignals()
 {
+
       Color::Modifier red( Color::FG_RED );
       Color::Modifier green( Color::FG_GREEN);
       Color::Modifier simulation( Color::BG_BLUE);

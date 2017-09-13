@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <errno.h>
 
 
 #include <src/vds/vds.h>
@@ -145,16 +146,17 @@ void init_main_bma(ISystem *pSystem)
     pSystem->BmaMain.fd = configure_device_as_bma_input(bmaDeviceName );
     if( pSystem->BmaMain.fd  == -1 )
     {
-        BmaConfig.setReason("Schnittstelle für Haupt BMA kann nicht geöffnet werden.");
+        BmaConfig.setReason("Schnittstelle für Haupt-BMA kann nicht geöffnet werden.");
         throw BmaConfig;
     }
 
     std::string bmaLogFileName = getSettings()->Cfg()->lookup("bma.input-log");
-    pSystem->BmaMain.fdLog = open( bmaLogFileName.c_str() ,  O_RDWR | O_CREAT | O_APPEND);
+    pSystem->BmaMain.fdLog = open( bmaLogFileName.c_str() ,  O_RDWR | O_CREAT | O_APPEND, 0666);
     if( pSystem->BmaMain.fdLog < 0 )
     {
+        printf("%s", strerror(errno));
         cout << "WARNING: Could not open log..." << endl;
-        BmaConfig.setReason("Input Log für Bma kann nicht geöffnet werden.");
+        BmaConfig.setReason("Input Log für Haupt-Bma kann nicht geöffnet werden.");
         throw BmaConfig;
     }
 

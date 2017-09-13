@@ -81,7 +81,18 @@ bool CanNode::GetUpdated(){return m_Updated; }
 
 void CanNode::DumpInfo()
 {
-    cout << "Node " << m_NodeNr << " State:" << m_state << "\r\n";
+    cout << "Node " << m_NodeNr << " State in:" << m_i_state << "out:" << m_o_state <<"\r\n";
+
+    cout << "Inputs 0-8:";
+    for(int i =0;i<8;i++)
+        cout << " " << m_DigitalInput[i];
+    cout << "\r\n";
+
+    cout << "Outputs 0-8:";
+    for(int i =0;i<8;i++)
+        cout << " " << m_DigitalOutput[i];
+    cout << "\r\n";
+
 }
 
 void CanNode::GenerateSignals(ioimage*image)
@@ -117,6 +128,8 @@ void CanNode::CopySignalsToImage(uint64_t *p)
     {
         if( m_DigitalInput[i] == false)
             continue;
+
+        cout << "do[" << i << "]=1";
         d |= (1<<i);
     }
 
