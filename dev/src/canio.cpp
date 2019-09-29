@@ -42,7 +42,8 @@ int getNodeNrCANId(int id)
 
     if( id >= 1630 && id < (1630+62) )
         return id - 1630 + 1;
-
+    if( id >= 222 && id < (222+62) )
+	return id - 222 +1;
     return 0;
 }
 
@@ -57,6 +58,9 @@ void CanIo::Input()
 
     while( Receive(&frame) == 0 )
     {
+	// 2022 = Identify Node, for CAN-IO etc
+	if( frame.can_id == 0x2022 )	
+            continue;
 
         int NodeNr = getNodeNrCANId( frame.can_id );
         if( NodeNr > 0)

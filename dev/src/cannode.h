@@ -31,11 +31,11 @@ class CanNode
     int m_state;           // Statemachine
     int m_state_index;     // Statemachine Index
 
-    int m_o_state;           // Statemachine
-    int m_i_state;           // Statemachine
+    volatile int m_o_state;           // Statemachine
+    volatile int m_i_state;           // Statemachine
     int m_o_state_count;
     canid_t m_CanIdDi, m_CanIdDo, m_CanIdCmdReq, m_CanIdCmdResp;
-
+    canid_t m_CanIdAlarm;
 
 
     int m_ConfiguredModuleCount;

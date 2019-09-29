@@ -47,7 +47,7 @@ CanNode::CanNode(int NodeNr, string Name)
     m_CanIdCmdResp = NodeNr + 1629;
     m_CanIdDi = 286 + (NodeNr-1)*4;
     m_CanIdDo = 414 + (NodeNr-1)*4;
-
+    m_CanIdAlarm = 222 + (NodeNr-1);
     m_o_state = 0;
     m_i_state = 0;
 
@@ -162,8 +162,17 @@ void CanNode::UpdateDigitalOutputs(CanIo *pIO)
     if( m_o_state != 10 )
         return;
 
+    cout << "do-" << "\r\n";
     getDoFrame( &oframe );
-    CopySignalsToImage( (uint64_t*) oframe.data);
+
+    for(int i=0;i<8;i++)
+    {
+        unsigned char d = 0;
+        for(int k=0;k<8;k++)
+            if( m_DigitalOutput[i*8+k] == true )
+               d |= (1<<k);
+	oframe.data[i]=d; 
+    }
     pIO->Send(&oframe);
 }
 
@@ -195,6 +204,13 @@ void CanNode::Statemachine(CanIo *pIO,struct can_frame *frame)
         // Fehler sind Frames mit Bit 7 = 1 oder 0xFF in der Kennung
         if( frame->data[0] == 0xFF || (frame->data[0] & 0x80) == 0x80 )
             m_o_state = 20;
+        if( frame->can_id == m_CanIdAlarm )
+	{
+	  cout << "alarm:" << "\r\n";
+	  for(int i=0;i<8;i++)
+	     cout << " " << (int)frame->data[i];
+          cout << "\r\n";
+	}
     }
 
     switch (m_o_state)
@@ -233,9 +249,11 @@ void CanNode::Statemachine(CanIo *pIO,struct can_frame *frame)
             if( frame != NULL && frame->can_id == m_CanIdCmdResp )
             {
                 // Anzahl der Module in
-                if( (m_ConfiguredModuleCount+1) != frame->data[4])
+                if( m_ConfiguredModuleCount != frame->data[4])
                 {
                     cout << "    Modulanzahl stimmt nicht." << "\r\n";
+		    cout << "Reported:" << (int) frame->data[4] << 
+			" configured:" << m_ConfiguredModuleCount <<  "\r\n";
                     m_o_state = 20;
                 }
                 else
@@ -248,7 +266,10 @@ void CanNode::Statemachine(CanIo *pIO,struct can_frame *frame)
 
         case 4:
             if( m_state_index >= m_ConfiguredModuleCount )
+	    {
+		cout << "Enter Run State\r\n";
                 m_o_state = 10;
+	    }
             else
             {
                 m_o_state = 5;
@@ -278,14 +299,13 @@ void CanNode::Statemachine(CanIo *pIO,struct can_frame *frame)
             break;
 
         case 10:
-            if( m_o_state_count++ > 100 )
+            if( m_o_state_count > 100 )
                 m_o_state = 0;
 
             if( frame != NULL && frame->can_id == m_CanIdDi)
             {
                 /* */
                 m_o_state_count = 0;
-
             }
 
             /* operating */
